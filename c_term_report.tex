@@ -10,6 +10,17 @@
 \usepackage{pgfplots}
 \usepackage{siunitx}
 \usepackage{tikz}
+\usepackage{color}   %May be necessary if you want to color links
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=blue,  %choose some color if you want links to stand out
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
 
 \pgfplotsset{compat=1.13}
 
@@ -22,6 +33,10 @@
 
 \maketitle{}
 
+\section{Abstract}
+
+% This will be the _last_ section we ever write.
+
 \section{Introduction}
 
   Knowing the position and orientation of a mobile robot is critical to many tasks. For robots designed for high-speed gameplay, knowing the position and orientation allows the robot to perform complex autonomous behaviors such as shooting and retrieving game objects. In this report, we describe a system for determining the pose $(x, y, \theta)$ of a mobile robot in a cluttered environment. We are using the use case of FIRST Robotics Competitions (FRC) as the environment for testing the platform. The localization platform is being designed as an all purpose localization platform with focus on the FRC environment due to the interesting challenges FRC provides. FRC is a challenging environment because the robots make rapid and aggressive maneuvers by human drivers for part of the time, and at other times are under complete autonomy. Another challenge is that FRC fields are cluttered with other robots and game pieces such as soccer balls, pool noddles, or inflatable shapes, and these objects change from year to year. A successful localization system for FRC must support up to six robots, as well as occlusion from the playing field elements, unpredictable lighting, and frequent impacts. Our research suggests that there are at least five appropriate methods for localization: cameras and tags, radio and ultrasonic beacons, optical flow, dead reckoning with encoders, and dead reckoning with an IMU. All of these methods have seen success in robot localization.
@@ -29,7 +44,9 @@
 	At the highest level, our project is to allow FRC robots to query their position on the field. This information is a prerequisite for interesting behaviors such as path following, picking up game pieces, navigating to feeder stations, and detecting slips and collisions. These behaviors are currently beyond the reach of most teams, so we hope that by providing a system for localization, teams can extend our work to these complex behaviors. An important criteria for our system is that it work well not only on the FRC field, but in teams practice spaces. If teams are not confident that their system will perform in competition the same way it performs in their practice spaces, they will not use. The risk is simply too great. This is a challenge that most previous localization systems do not consider. Even though FRC teams do not have a full field to test on, they still need a way to test specific behaviors that are specific to the field. Presently, teams will construct mock-ups of small parts of the field and various game elements to test with. For example, if the game requires shooting basketballs into a hoop, most teams will build or purchase a basketball hoop that is similar to the one used on the field and mount it somewhere in their shop. The important point is that the hoop will likely be mounted in a slightly different position or orientation. Ideally, using our system teams would be able to use their mock setup as if it were the real field. In other words, teams could test a program that autonomously shoots balls into the hoop in their shop and later use the same code with confidence in the competition. Teams must be able to specify the location of their mock field elements so that our localization system can report position that is relative to this hallucinated version of the field.
 	This report begins with a review of existing literature on indoor localization for mobile robots in the \nameref{related_work} section. The strengths and weaknesses of these existing methods are described in the \nameref{methods} section. The \nameref{experiments} section contains information on experiments we conducted. The \nameref{specs} section provides a complete description of our design criteria and system specifications. The \nameref{conclusion} section details our plan moving forward.
 
-\section{Related Work} \label{related_work}
+\tableofcontents
+
+\section{Survey of Localization Techniques} \label{related_work}
 
    Overall, the problem of localizing a mobile robot can be viewed as accurately measure the absolute distance to known landmarks, or by measuring the changes in position over time. All localization methods lie somewhere on a spectrum between these two points of view, and we will henceforth refer to these two ideas as global and local pose estimation. Some of the high level techniques for robot localization are: measuring range at various points around the robot and matching these readings to a map, measuring time of flight or difference of time of arrival to calculate distance to known locations, recognizing landmarks and computing pose relative to those landmarks, and measuring changes in pose and accumulating these changes over time. There are different sensors that can be used for each of these techniques, such as laser range finders, ultrasonic, cameras, inertial measurement units (IMU), encoders, radio, infrared light, visible light, and human-audible sound. Although there are a tremendous number of possible methods for indoor mobile robot localization, there are a few which have received the most attention and shown the most success. These include:
   \begin{itemize}
@@ -46,10 +63,12 @@
   In our research, we learned how these techniques work and found descriptions and implementations in order to evaluate them. These descriptions and implementations are presented in this section with the purpose of demonstrating a thorough literature review and of providing background information to the reader.
 
   \subsection{LIDAR Mapping}
-	LIDAR is a sensor that works by measuring the amount of time it takes light to return to the LIDAR after hitting a desired object \cite{keith_lidar_2007}. Light travels at about \SI{0.3}{\meter\per\nano\second} which is a constant speed \cite{keith_lidar_2007}. The sensor sends a certain number of beams at certain intervals towards an object. Since light moves at a constant speed the LIDAR can calculate the distance between itself and the object that light was hitting. To calculate distance the formula $\frac{d*c}{2}$ can be used. $d$ is the distance to the object, $c$ is speed of light and then divided by two to account for traveling to the object and back. By repeating this process at different angles the LIDAR can produce a map of its surroundings by finding the distance between it and surrounding objects within its detecting range \cite{keith_lidar_2007}.
-	There are three types of information LIDAR can collect depending on the type of LIDAR. The first is the range to the target which is found using a topographical LIDAR \cite{keith_lidar_2007}. A differential Absorption LIDAR can find the chemical properties of the targets it is measuring. A doppler LIDAR can measure the velocity of a target \cite{keith_lidar_2007}. This project would use a topographical LIDAR to measure the distance from itself to other objects to find position.
-  Most LIDAR have two main pulse systems for measuring distance. The first system uses a micropulse have lower powered lasers that are usually considered safer \cite{keith_lidar_2007}. The wavelength for these is typically 1.0-\SI{1.5}{\meter} \cite{lidar_uk_how_2017}. The second system uses high energy lasers and is typically only used for atmospheric measurements \cite{keith_lidar_2007}. The wavelength of these is typically 0.5-\SI{0.55}{\meter} \cite{lidar_uk_how_2017}.
-	LIDAR does localization by using the map it generated of its surrounding and being able to identify landmarks on the map. The LIDAR system will then compare the location of the landmarks to a previously known map. And since the distance between it and those landmarks are known, the LIDAR system can be used to determine its own position \cite{schlichting_vehicle_2016}. Another approach is to match point clouds found on the most recent map produced by the LIDAR to point clouds on the prior map. This has advantages because it does not rely on there being distinguishing features in the environment. But it also takes more time to compute the map since it has to compare more points than a feature to feature map \cite{li_extracting_2010}.
+    LIDAR is a sensor that works by measuring the amount of time it takes light to return to the LIDAR after hitting a desired object \cite{keith_lidar_2007}. Light travels at about \SI{0.3}{\meter\per\nano\second} which is a constant speed \cite{keith_lidar_2007}. The sensor sends a certain number of beams at certain intervals towards an object. Since light moves at a constant speed the LIDAR can calculate the distance between itself and the object that light was hitting. To calculate distance the formula $\frac{d*c}{2}$ can be used. $d$ is the distance to the object, $c$ is speed of light and then divided by two to account for traveling to the object and back. By repeating this process at different angles the LIDAR can produce a map of its surroundings by finding the distance between it and surrounding objects within its detecting range \cite{keith_lidar_2007}.
+
+    There are three types of information LIDAR can collect depending on the type of LIDAR. The first is the range to the target which is found using a topographical LIDAR \cite{keith_lidar_2007}. A differential Absorption LIDAR can find the chemical properties of the targets it is measuring. A doppler LIDAR can measure the velocity of a target \cite{keith_lidar_2007}. This project would use a topographical LIDAR to measure the distance from itself to other objects to find position.
+
+    Most LIDAR have two main pulse systems for measuring distance. The first system uses a micropulse have lower powered lasers that are usually considered safer \cite{keith_lidar_2007}. The wavelength for these is typically 1.0-\SI{1.5}{\meter} \cite{lidar_uk_how_2017}. The second system uses high energy lasers and is typically only used for atmospheric measurements \cite{keith_lidar_2007}. The wavelength of these is typically 0.5-\SI{0.55}{\meter} \cite{lidar_uk_how_2017}.
+    LIDAR does localization by using the map it generated of its surrounding and being able to identify landmarks on the map. The LIDAR system will then compare the location of the landmarks to a previously known map. And since the distance between it and those landmarks are known, the LIDAR system can be used to determine its own position \cite{schlichting_vehicle_2016}. Another approach is to match point clouds found on the most recent map produced by the LIDAR to point clouds on the prior map. This has advantages because it does not rely on there being distinguishing features in the environment. But it also takes more time to compute the map since it has to compare more points than a feature to feature map \cite{li_extracting_2010}.
 
   \subsection{Ultrasonic Mapping}
 
@@ -94,41 +113,41 @@
 
   \subsection{Optical Flow}
 
-	Optical flow is the ability to track changes between cameras frames and measure the differences between them to track position. In other words, optical flow is where given a sequence of images it can find the movement of objects between the images. More exactly optical flow looks at the movement of pixels among images. There are many assumptions about the image that has to be made in order to calculate in order to calculate optical flow. The first is that the lighting in the image stays consistent throughout the sequence of images. Images with inconsistent lighting or transparent objects would violate this assumption. Limiting the amount of inconsistencies in each sequence of images leads to more accurate optical flow.
+    Optical flow is the ability to track changes between cameras frames and measure the differences between them to track position. In other words, optical flow is where given a sequence of images it can find the movement of objects between the images. More exactly optical flow looks at the movement of pixels among images. There are many assumptions about the image that has to be made in order to calculate in order to calculate optical flow. The first is that the lighting in the image stays consistent throughout the sequence of images. Images with inconsistent lighting or transparent objects would violate this assumption. Limiting the amount of inconsistencies in each sequence of images leads to more accurate optical flow.
 
-	There are many methods of calculating optical flow that deal with different constraints. This first is the Horn and Schunk method which calculates optical flow looking at all pixels in an image making it considered a global method. Along with the lighting constraint it also adds that the image should be as smooth as possible and have few variations in its coloration. The closer the amount of variations is to zero the more accurate the optical calculation will be\cite{odonovan_optical_2005}.
+    There are many methods of calculating optical flow that deal with different constraints. This first is the Horn and Schunk method which calculates optical flow looking at all pixels in an image making it considered a global method. Along with the lighting constraint it also adds that the image should be as smooth as possible and have few variations in its coloration. The closer the amount of variations is to zero the more accurate the optical calculation will be\cite{odonovan_optical_2005}.
 
-	The optical flow vector for each pixel is calculated using the equation below. $I_x$  and $I_y$  are the spatial gradient of the current pixel. Spatial gradients refer to the the path the pixel is moving along. $I_t$ is the temporal gradient of the current pixel. Temporal gradient is how similar the motion of the pixel is to its neighbors \cite{sun_optical_2008}. $\alpha$ is a weighting term. $\bar{u}$ and $\bar{v}$ are the components of the average optical flow vector of neighboring pixels. The equation is shown below \ref{eq:hotnandschunk} \cite{odonovan_optical_2005}. $n$ represents which iteration the optical flow calculation is on. Each current pixels optical flow is calculated based on previous iterations pixels. Optical flow calculation will iterate from pixel to pixel until it has calculated optical flow for each pixel.
+    The optical flow vector for each pixel is calculated using the equation below. $I_x$  and $I_y$  are the spatial gradient of the current pixel. Spatial gradients refer to the the path the pixel is moving along. $I_t$ is the temporal gradient of the current pixel. Temporal gradient is how similar the motion of the pixel is to its neighbors \cite{sun_optical_2008}. $\alpha$ is a weighting term. $\bar{u}$ and $\bar{v}$ are the components of the average optical flow vector of neighboring pixels. The equation is shown below \ref{eq:hotnandschunk} \cite{odonovan_optical_2005}. $n$ represents which iteration the optical flow calculation is on. Each current pixels optical flow is calculated based on previous iterations pixels. Optical flow calculation will iterate from pixel to pixel until it has calculated optical flow for each pixel.
 
-      \begin{figure}[H]
-        \centering
-        \begin{equation}
-          \begin{split}
-            u^{n+1} &= \bar{u}^n-\frac{I_x[I_x\bar{u}^n+I_y\bar{v}^n+I_t]}{\alpha^2+I_x^2+I_y^2} \\
-            v^{n+1} &= \bar{v}^n-\frac{I_x[I_y\bar{u}^n+I_y\bar{v}^n+I_t]}{\alpha^2+I_x^2+I_y^2}
-          \end{split}
-        \end{equation}
-        \caption{Horn and Schunk Optical Flow vector equation}
-        \label{eq:hotnandschunk}
-      \end{figure}
+    \begin{figure}[H]
+      \centering
+      \begin{equation}
+        \begin{split}
+          u^{n+1} &= \bar{u}^n-\frac{I_x[I_x\bar{u}^n+I_y\bar{v}^n+I_t]}{\alpha^2+I_x^2+I_y^2} \\
+          v^{n+1} &= \bar{v}^n-\frac{I_x[I_y\bar{u}^n+I_y\bar{v}^n+I_t]}{\alpha^2+I_x^2+I_y^2}
+        \end{split}
+      \end{equation}
+      \caption{Horn and Schunk Optical Flow vector equation}
+      \label{eq:hotnandschunk}
+    \end{figure}
 
-  Optical flow can also be done locally using the Lucas Kanade method \cite{sun_optical_2008}. This method is based on the assumption that the optical flow vector of pixels are similar to their surrounding pixels. This method finds optical flow vectors that are consistent with its neighboring pixels' temporal gradients and spatial gradients. Each neighbor is then given a weight based off of how close it is to the pixel. The farther away a pixel is, the lower a weight it is assigned. This is because spatial and temporal gradients are based on how far away a pixel is so the error will be larger. Having a lower weight will reduce the error. The formula for the optical flow vector is a least squares equation shown below in equation \ref{eq:lucaskanade} \cite{odonovan_optical_2005}.
+    Optical flow can also be done locally using the Lucas Kanade method \cite{sun_optical_2008}. This method is based on the assumption that the optical flow vector of pixels are similar to their surrounding pixels. This method finds optical flow vectors that are consistent with its neighboring pixels' temporal gradients and spatial gradients. Each neighbor is then given a weight based off of how close it is to the pixel. The farther away a pixel is, the lower a weight it is assigned. This is because spatial and temporal gradients are based on how far away a pixel is so the error will be larger. Having a lower weight will reduce the error. The formula for the optical flow vector is a least squares equation shown below in equation \ref{eq:lucaskanade} \cite{odonovan_optical_2005}.
 
-      \begin{figure}[H]
-        \centering
-        \begin{equation}
-          \begin{split}
-            E_v &= \sum_{p\in\Omega}W^2(p)[\nabla I(p)\cdot v + I_t(p)] \\
-          \end{split}
-        \end{equation}
-        \caption{Lucas Kanade Optical Flow vector equation}
-        \label{eq:lucaskanade}
-      \end{figure}
+    \begin{figure}[H]
+      \centering
+      \begin{equation}
+        \begin{split}
+          E_v &= \sum_{p\in\Omega}W^2(p)[\nabla I(p)\cdot v + I_t(p)] \\
+        \end{split}
+      \end{equation}
+      \caption{Lucas Kanade Optical Flow vector equation}
+      \label{eq:lucaskanade}
+    \end{figure}
 
 
     $\nabla I(p)$ and $I_t(p)$ are the spatial gradient and the temporal gradient for each of the neighboring pixels $p$. $v$ is the optical flow vector for pixel located at $(x, y)$ on the image. $W(p)$ is the weight assigned for each pixel. Local methods tend to work better since they do not allow information about vectors to spread to unrelated regions of the image. This issue of information spreading to unrelated areas of the image is especially problematic in global methods when the assumptions about consistent smoothness and illumination are not fully met. There are a variety of other optical flow methods that focus on different ways of comparing pixels within images but local and global are the most popular methods \cite{odonovan_optical_2005}.
 
-	Lucas Kanade looks at pixels which have a large gradient in intensity of color. It changes images to be gray scaled in order to see changes in darkness instead of colors. Lucas Kanade method works the best when it uses pixels that have three qualities. The first is that the pixels in a small area have the same brightness. Even though the location of the pixel has changed the brightness is consistent, so using a pixel from that area to track is optimal. They also should be temporally similar meaning the path the pixel takes should change gradually. Pixels should also be spatially similar, meaning that neighboring pixels should have similar motion to each other. Picking pixels that fit these requirements work best with Lucas Kanade \cite{sun_optical_2008}.
+    Lucas Kanade looks at pixels which have a large gradient in intensity of color. It changes images to be gray scaled in order to see changes in darkness instead of colors. Lucas Kanade method works the best when it uses pixels that have three qualities. The first is that the pixels in a small area have the same brightness. Even though the location of the pixel has changed the brightness is consistent, so using a pixel from that area to track is optimal. They also should be temporally similar meaning the path the pixel takes should change gradually. Pixels should also be spatially similar, meaning that neighboring pixels should have similar motion to each other. Picking pixels that fit these requirements work best with Lucas Kanade \cite{sun_optical_2008}.
 
   \subsection{Filtering and Calibration} \label{filtering}
 
@@ -136,7 +155,7 @@
 
   Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characterstics of the camera \cite{noauthor_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
 
-\section{Evaluation of Localization Techniques} \label{methods}
+\section{Trade-Off Analysis} \label{methods}
 
   Each of the techniques presented thus far have strengths and weaknesses. In cases where those strengths and weaknesses are orthogonal, combining multiple techniques improves the overall performance. This is the fundamental principle behind sensor fusion. For example, in \cite{kim_advanced_2008} the authors use a compass to make up for the inability of beacons to measure orientation of the robot. In order to tackle all of the diverse challenges of localization in the FRC environment, we believe it is necessary to combine techniques. In this section we will explain which techniques we have selected for our system and which we have ruled out. We will justify why none of the techniques discussed are sufficient on their own, and explain which the techniques we have chosen work well together.
 
@@ -173,45 +192,7 @@
 
 \section{Experimental Results} \label{experiments}
 
-  \subsection{The Test Robot}
-
-    This section describes the hardware and software of the test robots we used throughout our experiments. We use an old FRC Kit-of-parts Chassis with 6" wheels. The rear wheels have high-grip rubber and the front wheels are a slick hard plastic. This creates an interesting uneven turning center, which is a good test-platform for robots that slip when turning. We use two CIM motors to drive the wheels and two Talon speed controllers to drive the CIMs. Our robot also has a RoboRIO and an NVidia brand Jetson TK1, which are networked together with a COTS router. For sensing, we have two Greyhill 63R256 encoders, a cheap 720p USB webcam, and a NavX-MXP. Figure \ref{fig:mocap_robot} shows the fully assembled robot.
-
-    \begin{figure}[H]
-      \centering
-      \includegraphics[width=1\linewidth]{./images/mocap_robot.jpg}
-      \caption{Test Robot used in our experiments}
-      \label{fig:mocap_robot}
-    \end{figure}
-
-  \subsection{Double Integration of Accelerometer}
-
-    Physics and calculus tell us that we can recover position information by double integrating acceleration. As a baseline, we wanted to see how well simply double integrating our accelerometer works. We drove a Turtlebot with a NavX around on a carpet surface and logged the encoder and accelerometer readings at \SI{10}{\hertz}. We then double integrated the encoder data (We used Equation \ref{eq:double_integrate} to perform the integration).
-
-    \begin{figure}[H]
-      \begin{equation}
-        \begin{split}
-          v^x_{t+1} = v^x_t + a^x_t\Delta t \\
-          v^y_{t+1} = v^y_t + a^y_t\Delta t \\
-          p^x_{t+1} = p^x_t + v^x_t\Delta t + 0.5a^x_t\Delta t^2 \\
-          p^y_{t+1} = p^y_t + v^y_t\Delta t + 0.5a^y_t\Delta t^2 \\
-        \end{split}
-        \label{eq:double_integrate}
-      \end{equation}
-      \caption*{Equation \ref{eq:double_integrate}: $a^x_t$ is the measured acceleration in the $x$ axis at time t.}
-    \end{figure}
-
-    We compared the resulting position to the position derived from forward kinematics of the encoder values. Because the Turtlebot is differential drive, moves slowly, and was driven on carpet, there is no slip, and so the position derived from encoders is extremely accuracy. Figure \ref{fig:turtlebot_imu} shows how adding a simple bias and scaling factor can improve the accurate of double integration.
-
-    \begin{figure}[H]
-      \centering
-      \includegraphics[width=0.49\linewidth]{./images/turtlebot_imu_1.png}
-      \includegraphics[width=0.49\linewidth]{./images/turtlebot_imu_2.png}
-      \caption{Comparison of unbiased double integration with various biases}
-      \label{fig:turtlebot_imu}
-    \end{figure}
-
-    This demonstrated clearly that there are some biases for which the accelerometer data, when double integrated, gives a useful estimate of position. The question then becomes solving for these constants. In the figures above, the green line uses biases that were computed by taking the average accelerometer readings over the first 40 readings, where the robot was not moving. This may have improved the results, but not significantly. The black line used averages over all the data (including while the robot is driving), which is suprisingly more accurate. The blue line uses hand-guesses biases, and is included to demonstrate that it is possible to find alternate biases that also do well. %TODO more from turtlebot circle experiments
+  One of the key contributions of this MQP is an extensive set of emperical and theoretical results spanning many different localization techniques. This sections describes each of these experiments and explains how each test impacts the practical implementation of a complete localization system.
 
   \subsection{IMU Calibration}
 
@@ -326,6 +307,7 @@
     After measuring each 5 times to check for repeatability it can be seen looking at the chart except for the last row how fast in seconds it took for each of the devices to run 100 frames. The last row frames per second was calculated for each device with the laptop reading approximately 26 FPS and the RoboRIO reading 12 FPS. While the laptop was over twice that of the RoboRIO the 12 FPS rate is still fast enough to meet the needs of the project. Other preliminary tests were done with shaking the camera as the program was running after having it initialize the image with marked pixels it had deemed best for measuring. After some shaking of the camera most marked pixels had stayed and only ones that were causes to go off screen by the shaking disappeared. The pixels that the program had decided to measure were based off of what types of pixels work best for Lucas Kanade base optical flow described in the research section of the paper		.
 
   \subsection{Camera and ArUco Tag}
+
     	We performed an experiment on clarity of ArUco tags with respect to textures and distance using ArUco tags with a 720p web camera. Six ArUco codes with different IDs were generated by an online ArUco tag generator. These tags have 3 different sizes: \SI{100}{\milli\meter}, \SI{150}{\milli\meter}, \SI{195}{\milli\meter} and 2 different textures: matte, reflective. Those tags were taped together on plywood.
 
     A program using OpenCV ArUco library was ran for 100 frames to count the times of different tags were recognized. For each distance, the program was ran 3 times and the average of the shown up times was calculated. The results of the experiments were shown in the diagram below (Figure \ref{fig:aruco_clarity}).
@@ -338,7 +320,93 @@
     \end{figure}
     There must be other factors other than textures and distances significantly changing the result of this experiment. A similar but improved experiment will be done in the future.
 
-	\subsubsection{Localization Algorithm}
+  \subsection{Collecting Ground-Truth with VICON Motion Capture}
+
+    The ground truth data for measuring accuracy and precision is obtained using a VICON brand Motion Capture system. This comprises a VICON Lock+ data processor and 8 Vero infrared cameras. These can collect 2.2 megapixels of data at maximally 330 FPS and are designed for capturing human motion in small spaces. The space used for experimentation was 19x14 feet. The pose of the robot is tracking using three retro-reflective markers. These are positioned at known distances such that the transform between the centroid of the markers and the centroid of the robot is easily obtained. A scalene triangle laser cut from acrylic was used as a guide.
+
+    \begin{figure}[H]%
+        \centering
+        \subfloat[guide for placement]{{\includegraphics[width=5cm]{./images/calib_triangle.png} }}%
+        \qquad
+        \subfloat[reflective markers]{{\includegraphics[width=5cm]{./images/vicon_markers.png} }}%
+        \caption{VICON tracker set up}%
+        \label{fig:viconSetup}%
+    \end{figure}
+
+    The camera system captures data at 100Hz. To synchronize data collection, the RoboRIO sends a 5V signal to the Lock+ processor, and a UDP packet is transmitted to the Jetson TK1. This data is synchronous to within a few (1-2) milliseconds. Using the same markers, the pose of the AruCo tags is also measured. Preliminary testing suggests that the odometry and IMU datasets alone are insufficient for position tracking when the robot is prone to skidding. Camera data has not been processed, so results are omitted.
+
+    \begin{figure}[H]%
+      \centering
+      \subfloat[robot in VICON field]{{\includegraphics[width=5cm]{./images/robot_in_plane.jpeg} }}%
+      \qquad
+      \subfloat[IMU, encoder, and VICON position data]{{\includegraphics[width=5cm]{./images/imu_enc_vicon_data.png} }}%
+      \caption{Collecting and Plotting Position data}%
+      \label{fig:positionData}%
+    \end{figure}
+
+    Because the VICON system is meant for high-resolution tracking in a small area, a robot with a large footprint and wheels prone to skidding may be inappropriate for early tests. Further testing is necessary using a smaller robot and a varying density of fiducial markers to obtain useful accuracy and precision data.
+
+  \subsection{The Doppler Effect on Ultrasonic}
+
+  \subsection{Limits of the ADC and DAC on the PSoC 5LP}
+
+  \subsection{Ultrasonic Beam Angle \& Full Pattern}
+
+    % could at do beam-spread equation here
+
+  \subsection{Characteristics of Piezo Transducers}
+
+    % FIXME
+		5 db loss over 15 feet. At 17 feet away, we saw best signal strength at 22.5kHz. The signal db is about 6.2 dB SNR! Noise floor is -58.7dB? what does that mean? If we measure a 1 volt RMS (353.5 mv peak-to-peak) sine wave, and the oscilloscope says -11 db? What does that mean?
+
+    Emitting sine wave works just as well as square wave.
+
+	\subsection{Co-Processors for Image Processing}
+
+    We evaluated the Raspberry PI 3 and the NVidia TK1. Neither was capable of recording 480p30, but either was good enough to read and process 480p30 just not save to video. % FIXME: more on what each platform is capable of
+
+	\subsection{Effect of Frame Rate and Resolution on ArUco Tag Detection}
+
+	\subsection{Update rate of localization from ArUco Tags}
+
+	\subsection{ArUco Misdetections}
+
+	\subsection{Evaluating NavX Location API}
+
+    % FIXME: how good is GetWorldX? show mocap + nypro circles results
+
+	\subsection{Latency over the Robot Network}
+
+		It is important that all of our sensor data be time stamped so we can account for latency in our state estimation. The data collected on the NavX is time stamped on the NavX, and the encoder data is stamped when it is read on the RoboRIO. This time stamped data is sent to the TK1 over UDP. UDP was chosen because it was the easiest method with satisfactory speed. To test this, we wrote a simple program that sends 96 bytes of UDP data between the RoboRIO and the TK1. We recorded the round trip time of these packets, which can be seen in Figure \ref{fig:udp_timing}. The latency was \SI{0.5}{\milli\second} on average, which is much faster than any of our sensors, and therefore is fast enough for us to transmit and process the data before new data arrives.
+
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.7\linewidth]{./images/rio_tk1_udp_latency_timeseries.png}
+			\caption{RTT of UDP packets between the RoboRIO and the TK1 over the robot's wired network.}
+			\label{fig:udp_timing}
+		\end{figure}
+
+		Another importnat problem is time synchronization. The time stamps on all the data must be in reference to some common time source. To achieve this effect, we use Christian's Algorithm \cite{cristian_probabilistic_1989}. Specifically, we send a packet stamped with the current time on the RoboRIO to the TK1, the TK1 adds its own time stamp and responses, the and RoboRIO then add half the round trip time to the time sent by the TK1. This allos the sensor data sent from the RoboRIO to be synchronized with the clock on the TK1.
+
+\section{System Specification} \label{specs}
+
+  \subsection{Design Criteria}
+
+    Here we present our goals and the criteria our system must meet in order to be successful. Broadly, we consider the following factors to be those which are important to the success of our system.
+    \begin{enumerate}
+      \item \textbf{Accuracy}\\ how close our position estimates are to ground truth.
+      \item \textbf{Precision}\\ how close our position estimates are to each other given the same ground truth.
+      \item \textbf{Update Rate}\\ how quickly does our system provide position estimates.
+      \item \textbf{Accessibility}\\ how affordable is our system, how difficult is it to make, and how easy is it for teams to use.
+    \end{enumerate}
+
+    To come up with hard numbers for these criteria, we first performed a few simple calculations based on our knowledge of FRC. First, we consider what teams would want to use position information for, and decided that the applications requiring the most accuracy are shooting and autonomous pick of game pieces at known locations. Both of these require the position estimates to be close to the true position of the robot. From there, we know that most FRC shooting and pickup mechanisms will work within $\pm$\SI{10}{\centi\meter}. Next, we decided the application requiring the most precision would be path following. If position estimates are imprecise and jump around rapidly, smooth path following will be difficult. From our experience with path following, we estimated that $\pm$\SI{5}{\centi\meter} would be sufficient. For update rate, we considered what the maximum distance a robot could move within a period and used that to decide what our update rate should be. The very fastest FRC robots move \SI{6}{\meter\per\second}, which at an update rate of every \SI{20}{\milli\second} is a distance of $0.02*6 =$ \SI{0.12}{\meter}. The rate of \SI{20}{\milli\second} is a realistic cycle time in FRC, and we feel \SI{12}{\centi\meter} is sufficient given the speed. For accessibility, we acknowledged that teams cannot spend more than \$400 on any part, and that most times source parts from websites AndyMark, Cross-the-road Electronics, and National Instruments among other suppliers. We are also conscious that many FRC teams have limited or cluttered spaces for testing their robots, and may be working in a shared space that must be clean and usable after their work sessions.
+
+    Using all of these informal estimates as a starting point, we conducted a survey of FRC students, Alumni, and mentors. We received 65 responses in total, and used the results of this survey to solidify our design criteria. The full response of this survey are presented in \nameref{appendix:survey}. In summary, the median for accuracy was \SI{10}{\centi\meter} in x,y and \ang{5} in yaw. Our survey did not include questions about precision and update rate, because they depend on what position is used for. Instead, we asked if students would try path planning if they had a localization system, which would back up our estimate of precision. Our survey indicated that 90\% of students would try to make the robot autonomously follow paths. Therefore, our precision estimated based on path planning as an application is supported by our survey. Update rate was not addressed in the survey because we didn't think FRC students would have informed opinions on this metric. Finally, we asked several questions about the accessibility requirements. A cost of under \$200 was deemed acceptable by 84.6\% of responses, and so we have made \$200 our goal for cost. Furthermore, we learned that the amount of space in teams shops varies from a 5 by 5 foot space up to several thousand square feet, but the median shop size is 775 $ft^2$, which one can imagine as a 25 by 30 ft space. In terms of access, about 76.5\% of teams could leave up tags or beacons, with the others stating that they must clean up everything because they work in a shared space such as a classroom. Lastly, we asked students what sensors they were familiar with. The most familiar sensors were cameras (90\%), followed by encoders (84.6\%), then IMUs (60\%). Therefore, it would be beneficial to incorporate cameras, encoders, and IMUs because teams are already familiar with them.
+
+    Ultimately, we formulated design criteria based on our own experience with FRC and with localization, as well as by conducting a survey of the needs, experience, and opinions of FRC participants. These design criteria will help us pick which localization techniques to pursue as well as define the goals for our system.
+
+	\subsubsection{ArUco SLAM}
 
     To detect the pose of a robot with respect to an absolute origin, a AruCo-based SLAM algorithm was developed. The AruCo library provides a function for estimating the pose of an object by minimizing the squared sums of the distances between the projected points and the measured points (reprojection error). The side length of each tag is known and input into the program. The measured points (two corners, minimally) are used to obtain a point estimate in 3D space. Multiple point estimates from each corner are used to calculate the pose of the AruCo tag's centroid. The projected points are described by the camera matrix, which is a model for a pinhole camera discussed above. The reprojection error corrects the pose estimate based on the calibrated values.
 
@@ -385,181 +453,10 @@
     \end{figure}
 
 	\subsection{Kalman Filtering}
-    We designed a Kalman filter that combines measured and predicted data to find the optimal estimate of robot position. The dynamics of the robot had to be calculated to find the state from measured sensor data and a model had to be made of the robot.The state variable $x$ describes what variables are going to be measured and predicted. We decided that the state needs to represent the position, velocity, and acceleration of the robot which can be described using $x$, $y$, $\theta$, $\dot{x}$, $\dot{y}$, $\dot{\theta}$, $\ddot{x}$, $\ddot{y}$, and $\ddot{\theta}$. The control inputs which will be $u$ will be acceleration of the left wheel and right wheel. The sensors contributing data to the filter are an accelerometer, gyroscope, encoders, and camera. The Kalman filter consists of two sets of equations. The first equation predicts the current state by using the state estimate from the previous time step and the current input which can be seen in equation \ref{eq:PredictedStateEstimateEquation} below.
 
-    \begin{equation} \label{eq:PredictedStateEstimateEquation}
-      \hat{x}_t = Ax_t + Bu_t
-    \end{equation}
+    % FIXME: redo this section
 
-		The A matrix describes the robots dynamics trying to predict the next state given the current state. The dynamics equations are used to calculate final position,velocity,and acceleration for given current position, velocity, and acceleration. The equations for prediction for current position in $x$ and current velocity in $x$ are shown below in equation \ref{eq:MotionEquationsForX}.
-
-    \begin{equation} \label{eq:MotionEquationsForX}
-			\begin{split}
-					x_{t+1} &= x_t + \dot{x}_t\Delta t + \tfrac{1}{2}\ddot{x}_t\Delta t^2 \\
-					\dot{x}_{t+1} &= \dot{x}_t + \ddot{x}_t\Delta t
-			\end{split}
-    \end{equation}
-
-		This estimation was done for each variable in the state vector $x$ for position,velocity, and acceleration and put into matrix multiplication form. Below in matrix \ref{eq:Amatrixandxvector} is the final A dynamics matrix and $x$ state vector.
-
-    \begin{equation} \label{eq:Amatrixandxvector}
-      \begin{bmatrix}
-        1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 & 0 \\
-        0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t& 0 \\
-        0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 & \tfrac{1}{2}\Delta t \\
-        0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 & 0 \\
-        0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t & 0 \\
-        0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & \Delta t \\
-        0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-        0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-        0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
-      \end{bmatrix}
-      \begin{bmatrix}
-        x \\
-        y \\
-        \theta \\
-        \dot{x} \\
-        \dot{y} \\
-        \dot{\theta} \\
-        \ddot{x} \\
-        \ddot{y} \\
-        \ddot{\theta} \\
-      \end{bmatrix}
-    \end{equation}
-
-		The B matrix describes the change in state given the inputs to the motors. This matrix derives its equations for change in position and velocity estimation based off of equations for finding the acceleration based off the left and right wheel velocities. For acceleration in the $x$ and $y$ directions the average of the accelerations in left and right wheels and then breaks it into $x$ and $y$ components by multiplying by cos($\theta$) or sin($\theta$). The equation used to find theta for acceleration can be seen in equation \ref{eq:Equationsofmotionbasedonangularacceleration} below with R being the wheel radius while W track width between wheels.
-
-    \begin{equation} \label{eq:Equationsofmotionbasedonangularacceleration}
-			\begin{split}
-        \Delta x_{t+1} &= \cos(\theta)\frac{1}{4}\Delta t^2\alpha_l + \cos(\theta)\frac{1}{4}\Delta t^2\alpha_r \\
-        \Delta y_{t+1} &= \sin(\theta)\frac{1}{4}\Delta t^2\alpha_l + \sin(\theta)\frac{1}{4}\Delta t^2\alpha_r \\
-        \Delta\theta_{t+1} &= \frac{R\Delta t^2}{W2}\alpha_l + \frac{-R\Delta t^2}{W2}\alpha_r\\
-        \Delta\dot{x}_{t+1} &= \cos(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
-        \Delta\dot{y}_{t+1} &= \sin(\theta_t)\frac{\alpha_l+\alpha_r}{2}\Delta t \\
-        \Delta\dot{\theta}_{t+1} &= \frac{R\Delta t}{W}\alpha_l + \frac{-R\Delta t}{W}\alpha_r
-			\end{split}
-    \end{equation}
-
-		The prediction of change in state for acceleration was calculated using these equations. The velocity equations were found by integrating with respect to time. For position the equations for the A matrix position since they had included acceleration already. The final B matrix and $u$ vector can be seen below in equation \ref{eq:Bmatrixanduvector}. The predicted state measurement can then be calculated by following the equation shown in equation \ref{eq:PredictedStateEstimateEquation} .
-
-    \begin{equation} \label{eq:Bmatrixanduvector}
-				\begin{bmatrix}
-					\cos(\theta_t)\frac{1}{4}\Delta t^2 & \cos(\theta_t)\frac{1}{4}\Delta t^2 \\
-					\sin(\theta_t)\frac{1}{4}\Delta t^2 & \sin(\theta_t)\frac{1}{4}\Delta t^2 \\
-					\frac{R\Delta t^2}{2W} & \frac{-R\Delta t^2}{2W} \\
-					\cos(\theta_t)\frac{1}{2}\Delta t & \cos(\theta_t)\frac{1}{2}\Delta t \\
-					\sin(\theta_t)\frac{1}{2}\Delta t & \sin(\theta_t)\frac{1}{2}\Delta t \\
-					\frac{R\Delta t}{W} & \frac{-R\Delta t}{W}\\
-					0 & 0 \\
-					0 & 0 \\
-					0 & 0 \\
-				\end{bmatrix}
-				\begin{bmatrix}
-					\alpha_l \\
-					\alpha_r \\
-				\end{bmatrix}
-    \end{equation}
-
-		Predicting the error covariance for the next state was was the next step. The error covariance represented by P is the variance in the estimate found by the equation in equation \ref{eq:ErrorCovarianceequation}.The equation to calculate is is shown below in equation \ref{eq:ErrorCovarianceequation}. The variable P is the estimate covariance matrix while Q is the process covariance matrix shown below in equation \ref{eq:ErrorCovarianceequation}. The estimate covariance matrix is the covariance between the estimated error covariance before and after the measurements were updated. The process covariance matrix is a matrix estimating the process noise which we found to be a diagonal matrix.
-
-    \begin{equation} \label{eq:ErrorCovarianceequation}
-        P_{t+1} = AP_tA^T + Q
-    \end{equation}
-
-		The next step in Kalman filtering is updating the measured values and finding the new estimate of the state based off the updated values. The update equations are shown below in equation \ref{eq:UpdateEquations}.
-
-    \begin{equation} \label{eq:UpdateEquations}
-      \begin{split}
-        K_t &= P_tC^T(CP_tC^T + R)^{-1} \\
-        x &= \hat{x} + K(z_t - C\hat{x}_t) \\
-        P_t &= (I - K_tC)P_t
-      \end{split}
-    \end{equation}
-
-		The first equation that calculates K minimizes the estimation of errors variance. The equation finds the ratio of the estimate covariance(P) and the estimate covariance plus the measurement variance(R). Whichever estimate has less error will weigh more towards the final estimation of state shown in the middle equation.
-		To estimate x based off of updated measurements the second equation shown in the list of equations \ref{eq:UpdateEquations} is used. The measurements that are being recorded from each sensor are stated in measurement matrix $z$. The matrix C if a matrix of ones that hold the place of where each measurement is in the 9 by 9 matrix so they can be subtracted from $z$. Matrix C is then multiplied by the state vector and then subtracted from $z$ as shown below in equation \ref{eq:Updatingmeasurements}. The difference between the updated measurements and the estimates of the state previously are found. That value is what is then adjusted by K. That value is then added to the a priori estimate to get the updated estimate of $x$. A similar equation is used to calculate the new error covariance. The variable I is a matrix of 1s on the diagonal. The K value is multiplied by C and then subtracted from I so each value in the I matrix is set based off of the value of K.
-
-    \begin{equation} \label{eq:Updatingmeasurements}
-        \begin{bmatrix}
-          \text{Accelerometer }\ddot{x} \\
-          \text{Accelerometer }\ddot{y} \\
-          \text{Gyro }\dot{\theta} \\
-          \text{Camera }x \\
-          \text{Camera }y \\
-          \text{Camera }\theta \\
-          \text{Encoders }x \\
-          \text{Encoders }y \\
-          \text{Encoders }\theta \\
-        \end{bmatrix} -
-        \begin{bmatrix}
-          0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 \\
-          0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 \\
-          0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 \\
-          1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-          0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-          0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-          1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-          0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
-          0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \\
-        \end{bmatrix}
-        \begin{bmatrix}
-          x \\
-          y \\
-          \theta \\
-          \dot{x} \\
-          \dot{y} \\
-          \dot{\theta} \\
-          \ddot{x} \\
-          \ddot{y} \\
-          \ddot{\theta} \\
-        \end{bmatrix}
-    \end{equation}
-
-\section{System Specification} \label{specs}
-
-  \subsection{Design Criteria}
-
-    Here we present our goals and the criteria our system must meet in order to be successful. Broadly, we consider the following factors to be those which are important to the success of our system.
-    \begin{enumerate}
-      \item \textbf{Accuracy}\\ how close our position estimates are to ground truth.
-      \item \textbf{Precision}\\ how close our position estimates are to each other given the same ground truth.
-      \item \textbf{Update Rate}\\ how quickly does our system provide position estimates.
-      \item \textbf{Accessibility}\\ how affordable is our system, how difficult is it to make, and how easy is it for teams to use.
-    \end{enumerate}
-
-    To come up with hard numbers for these criteria, we first performed a few simple calculations based on our knowledge of FRC. First, we consider what teams would want to use position information for, and decided that the applications requiring the most accuracy are shooting and autonomous pick of game pieces at known locations. Both of these require the position estimates to be close to the true position of the robot. From there, we know that most FRC shooting and pickup mechanisms will work within $\pm$\SI{10}{\centi\meter}. Next, we decided the application requiring the most precision would be path following. If position estimates are imprecise and jump around rapidly, smooth path following will be difficult. From our experience with path following, we estimated that $\pm$\SI{5}{\centi\meter} would be sufficient. For update rate, we considered what the maximum distance a robot could move within a period and used that to decide what our update rate should be. The very fastest FRC robots move \SI{6}{\meter\per\second}, which at an update rate of every \SI{20}{\milli\second} is a distance of $0.02*6 =$ \SI{0.12}{\meter}. The rate of \SI{20}{\milli\second} is a realistic cycle time in FRC, and we feel \SI{12}{\centi\meter} is sufficient given the speed. For accessibility, we acknowledged that teams cannot spend more than \$400 on any part, and that most times source parts from websites AndyMark, Cross-the-road Electronics, and National Instruments among other suppliers. We are also conscious that many FRC teams have limited or cluttered spaces for testing their robots, and may be working in a shared space that must be clean and usable after their work sessions.
-
-    Using all of these informal estimates as a starting point, we conducted a survey of FRC students, Alumni, and mentors. We received 65 responses in total, and used the results of this survey to solidify our design criteria. The full response of this survey are presented in \nameref{appendix:survey}. In summary, the median for accuracy was \SI{10}{\centi\meter} in x,y and \ang{5} in yaw. Our survey did not include questions about precision and update rate, because they depend on what position is used for. Instead, we asked if students would try path planning if they had a localization system, which would back up our estimate of precision. Our survey indicated that 90\% of students would try to make the robot autonomously follow paths. Therefore, our precision estimated based on path planning as an application is supported by our survey. Update rate was not addressed in the survey because we didn't think FRC students would have informed opinions on this metric. Finally, we asked several questions about the accessibility requirements. A cost of under \$200 was deemed acceptable by 84.6\% of responses, and so we have made \$200 our goal for cost. Furthermore, we learned that the amount of space in teams shops varies from a 5 by 5 foot space up to several thousand square feet, but the median shop size is 775 $ft^2$, which one can imagine as a 25 by 30 ft space. In terms of access, about 76.5\% of teams could leave up tags or beacons, with the others stating that they must clean up everything because they work in a shared space such as a classroom. Lastly, we asked students what sensors they were familiar with. The most familiar sensors were cameras (90\%), followed by encoders (84.6\%), then IMUs (60\%). Therefore, it would be beneficial to incorporate cameras, encoders, and IMUs because teams are already familiar with them.
-
-    Ultimately, we formulated design criteria based on our own experience with FRC and with localization, as well as by conducting a survey of the needs, experience, and opinions of FRC participants. These design criteria will help us pick which localization techniques to pursue as well as define the goals for our system.
-
-  \subsection{Vicon Test}
-
-    The ground truth data for measuring accuracy and precision is obtained using a Vicon brand Motion Capture system. This comprises a Vicon Lock+ data processor and 8 Vero infrared cameras. These can collect 2.2 megapixels of data at maximally 330 FPS and are designed for capturing human motion in small spaces. The space used for experimentation was 19x14 feet. The pose of the robot is tracking using three retro-reflective markers. These are positioned at known distances such that the transform between the centroid of the markers and the centroid of the robot is easily obtained. A scalene triangle laser cut from acrylic was used as a guide.
-
-    \begin{figure}[H]%
-        \centering
-        \subfloat[guide for placement]{{\includegraphics[width=5cm]{./images/calib_triangle.png} }}%
-        \qquad
-        \subfloat[reflective markers]{{\includegraphics[width=5cm]{./images/vicon_markers.png} }}%
-        \caption{Vicon tracker set up}%
-        \label{fig:viconSetup}%
-    \end{figure}
-
-    The camera system captures data at 100Hz. To synchronize data collection, the RoboRIO sends a 5V signal to the Lock+ processor, and a UDP packet is transmitted to the Jetson TK1. This data is synchronous to within a few (1-2) milliseconds. Using the same markers, the pose of the AruCo tags is also measured. Preliminary testing suggests that the odometry and IMU datasets alone are insufficient for position tracking when the robot is prone to skidding. Camera data has not been processed, so results are omitted.
-
-    \begin{figure}[H]%
-      \centering
-      \subfloat[robot in Vicon field]{{\includegraphics[width=5cm]{./images/robot_in_plane.jpeg} }}%
-      \qquad
-      \subfloat[IMU, encoder, and Vicon position data]{{\includegraphics[width=5cm]{./images/imu_enc_vicon_data.png} }}%
-      \caption{Collecting and Plotting Position data}%
-      \label{fig:positionData}%
-    \end{figure}
-
-    Because the Vicon system is meant for high-resolution tracking in a small area, a robot with a large footprint and wheels prone to skidding may be inappropriate for early tests. Further testing is necessary using a smaller robot and a varying density of fiducial markers to obtain useful accuracy and precision data.
-
-  \subsection{System Specification}\label{section:system_spec}
+  \subsection{?? stupid title}\label{section:system_spec}
 
     Based on the extensive literature review, the few preliminary experiments we've conducted, and our design criteria, we eliminated our initial list of possible techniques down to the following five:
 
@@ -617,24 +514,22 @@
 
     Having decided on the sensing techniques we will use, we now describe our detailed system Specification. Ideally, the description in this section serves as the full plan for our implementation of the system during B Term, and most of the major design decisions have been made and clearly presented.
 
-    \subsubsection{General Architecture}
+		\subsubsection{The Test Robot}
 
-    Given the five sensing technologies mentioned above, we will now provide details on the configuration and use of each sensor. The Navx IMU is connected to the RoboRIO, which is the main processor which are FRC teams are required to use. The encoders on the drive train are similarly connected to the digital IO pins on the RoboRIO. These sensors are connected to the RIO directly because they are often used by FRC Teams in their robot programs. We also introduce the NVIDIA Jetson TK1 as a co-processor. The camera is connected via USB-A to the TK1. Because of its superior computational power, the TK1 is responsible for processing all of the raw sensor data and delivering the result back to the main robot program. In this setup, the TK1 can receive sensor data from the RoboRIO over the robot network band from the USB webcam directly.
+			This section describes the hardware and software of the test robots we used throughout our experiments. We use an old FRC Kit-of-parts Chassis with 6" wheels. The rear wheels have high-grip rubber and the front wheels are a slick hard plastic. This creates an interesting uneven turning center, which is a good test-platform for robots that slip when turning. We use two CIM motors to drive the wheels and two Talon speed controllers to drive the CIMs. Our robot also has a RoboRIO and an NVidia brand Jetson TK1, which are networked together with a COTS router. For sensing, we have two Greyhill 63R256 encoders, a cheap 720p USB webcam, and a NavX-MXP. Figure \ref{fig:mocap_robot} shows the fully assembled robot.
 
-    There are two software components of our system. First, there is a a C++ library cross-compile for the RoboRIO that FRC teams will use in their robot projects. Teams are expected to call two or three simple functions in their robot program, which gives us everything we need to log sensor data and send it to the TK1. Because of this minimal API, we require very few changes to robot programs in order to get localization. This will make it approachable for teams and encourage them to try localization. The second software component is a C++ program running on the TK1. This program reads the camera data, serves http camera streams, receives the sensor data from the RoboRIO, computes the position of the robot, and reports this position over network tables. Again, the TK1 was chosen for this task because of it's computing power.
+			\begin{figure}[H]
+				\centering
+				\includegraphics[width=1\linewidth]{./images/mocap_robot.jpg}
+				\caption{Test Robot used in our experiments}
+				\label{fig:mocap_robot}
+			\end{figure}
 
-    \subsubsection{Communications and Latency}
+			\subsubsection{General Architecture}
 
-    It is important that all of our sensor data be time stamped so we can account for latency in our state estimation. The data collected on the NavX is time stamped on the NavX, and the encoder data is stamped when it is read on the RoboRIO. This time stamped data is sent to the TK1 over UDP. UDP was chosen because it was the easiest method with satisfactory speed. To test this, we wrote a simple program that sends 96 bytes of UDP data between the RoboRIO and the TK1. We recorded the round trip time of these packets, which can be seen in Figure \ref{fig:udp_timing}. The latency was \SI{0.5}{\milli\second} on average, which is much faster than any of our sensors, and therefore is fast enough for us to transmit and process the data before new data arrives.
+			Given the five sensing technologies mentioned above, we will now provide details on the configuration and use of each sensor. The Navx IMU is connected to the RoboRIO, which is the main processor which are FRC teams are required to use. The encoders on the drive train are similarly connected to the digital IO pins on the RoboRIO. These sensors are connected to the RIO directly because they are often used by FRC Teams in their robot programs. We also introduce the NVIDIA Jetson TK1 as a co-processor. The camera is connected via USB-A to the TK1. Because of its superior computational power, the TK1 is responsible for processing all of the raw sensor data and delivering the result back to the main robot program. In this setup, the TK1 can receive sensor data from the RoboRIO over the robot network band from the USB webcam directly.
 
-      \begin{figure}[H]
-        \centering
-        \includegraphics[width=0.7\linewidth]{./images/rio_tk1_udp_latency_timeseries.png}
-        \caption{RTT of UDP packets between the RoboRIO and the TK1 over the robot's wired network.}
-        \label{fig:udp_timing}
-      \end{figure}
-
-      Another importnat problem is time synchronization. The time stamps on all the data must be in reference to some common time source. To achieve this effect, we use Christian's Algorithm \cite{cristian_probabilistic_1989}. Specifically, we send a packet stamped with the current time on the RoboRIO to the TK1, the TK1 adds its own time stamp and responses, the and RoboRIO then add half the round trip time to the time sent by the TK1. This allos the sensor data sent from the RoboRIO to be synchronized with the clock on the TK1.
+			There are two software components of our system. First, there is a a C++ library cross-compile for the RoboRIO that FRC teams will use in their robot projects. Teams are expected to call two or three simple functions in their robot program, which gives us everything we need to log sensor data and send it to the TK1. Because of this minimal API, we require very few changes to robot programs in order to get localization. This will make it approachable for teams and encourage them to try localization. The second software component is a C++ program running on the TK1. This program reads the camera data, serves http camera streams, receives the sensor data from the RoboRIO, computes the position of the robot, and reports this position over network tables. Again, the TK1 was chosen for this task because of it's computing power.
 
     \subsubsection{Encoder IMU Fusion}
 
@@ -645,7 +540,6 @@
       \textbf{Calibration}
 
       \textbf{Description of the Robot Model}
-
 
     \subsubsection{Radio and Ultrasonic Beacons}
 
