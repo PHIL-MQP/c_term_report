@@ -1,4 +1,5 @@
 *.bbl
+*.toc
 *.blg
 *.swp
 *.aux
