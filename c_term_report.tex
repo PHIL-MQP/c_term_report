@@ -256,7 +256,7 @@
 
   \subsection{Measuring Beacon Delays}
 
-    The beacon system relies on measuring the time it takes for a sound signal to travel from the beacons to the robot. To do this accurately, one must account for transmit and receive delays in addition to the actual time of flight. Figure \ref{fig:rx_tx_timing} illustrates the various delays we need to account for. We conducted experiments to estimate these delays. First, to get an estimate of the radio transmit and receive delay, a transmitter and receiver were set up on two microcontrollers. The transmitter sent \SI{5}{\milli\second} pulses at \SI{433}{\mega\hertz} (no encoded data) every \SI{55}{\milli\second}, and oscilloscope probes were attached to the input pin on the transmitter and the output pin on the receiver. By comparing the time difference between the input and output signals on the oscilloscope, we can determine the total time. Furthermore, we can measure the distance between the transmitter and receiver and subtract the theoretical time of flight from the total time. The full data for these measurements are available in \nameref{appendix:rf-rx-tx}, and an example measurement is shown in Figure \ref{fig:rf_delay_ex}. The time of flight of radio over distances of a new centimeters or meters is on the order of nanoseconds. We measured an average delay of \SI{45.175}{\micro\second}, which we attribute to the internal circuitry of the transmitter and receiver. The variance of this delay was \SI{16}{\micro\second}. However, we also measured delays as low as \SI{32}{\micro\second} and as high as \SI{79}{\micro\second}. Since the theoretical time of flight over the distances used in this experiment were at most \SI{1}{\nano\second}, we can conclude that there is both delay and significant variance in the delay of the transmitters and receivers. This is an important delay to consider when implementing the timing measurment of the beacon signals.
+    The beacon system relies on measuring the time it takes for a sound signal to travel from the beacons to the robot. To do this accurately, one must account for transmit and receive delays in addition to the actual time of flight. Figure \ref{fig:rx_tx_timing} illustrates the various delays we need to account for. We conducted experiments to estimate these delays. First, to get an estimate of the radio transmit and receive delay, a transmitter and receiver were set up on two microcontrollers. The transmitter sent \SI{5}{\milli\second} pulses at \SI{433}{\mega\hertz} (no encoded data) every \SI{55}{\milli\second}, and oscilloscope probes were attached to the input pin on the transmitter and the output pin on the receiver. By comparing the time difference between the input and output signals on the oscilloscope, we can determine the total time. Furthermore, we can measure the distance between the transmitter and receiver and subtract the theoretical time of flight from the total time. The full data for these measurements are available in \nameref{appendix:rf-rx-tx}, and an example measurement is shown in Figure \ref{fig:rf_delay_ex}. The time of flight of radio over distances of a new centimeters or meters is on the order of nanoseconds. We measured an average delay of \SI{45.175}{\micro\second}, which we attribute to the internal circuitry of the transmitter and receiver. The variance of this delay was \SI{16}{\micro\second}. However, we also measured delays as low as \SI{32}{\micro\second} and as high as \SI{79}{\micro\second}. Since the theoretical time of flight over the distances used in this experiment were at most \SI{1}{\nano\second}, we can conclude that there is both delay and significant variance in the delay of the transmitters and receivers. This is an important delay to consider when implementing the timing measurement of the beacon signals.
 
     \begin{figure}[H]
       \centering
@@ -281,7 +281,7 @@
       \label{table:us_delay}
     \end{table}
 
-    This data suggests that there is a constant delay of $\approx$\SI{115}{\second}, which could be attributed to the internal amplification circuitry and the time for the receiving piezo to begin to resonante. An example of the oscilloscope readings is shown in Figure \ref{fig:us_delay_scope}, which illustrates the time period where the receiving piezo response is building up before becoming detectable.
+    This data suggests that there is a constant delay of $\approx$\SI{115}{\second}, which could be attributed to the internal amplification circuitry and the time for the receiving piezo to begin to resonate. An example of the oscilloscope readings is shown in Figure \ref{fig:us_delay_scope}, which illustrates the time period where the receiving piezo response is building up before becoming detectable.
 
     \begin{figure}[H]
       \centering
@@ -292,7 +292,7 @@
 
   \subsection{Measuring Frequency Response}
 
-    After testing for delays, we also measured the frequency response of the NTX-1004PZ piezo speaker. We placed two speakers in the same configuration as described above. Using a function generator, we transmitted a square wave at 8vPP and swept from \SI{20}{\kilo\hertz} to \SI{30}{\kilo\hertz} and back down over the course of 20 seconds. We attached an oscilloscope to the receiving speaker and captured the power at each frequency using the FFT mode, persisting the display over the course of the sweep to see how the frequency response changes across our frequency range. Figure \ref{fig:frequency_response} shows the results of this experiment. From this experiment, we learned that the best frequency response is achieved at \SI{22}{\kilo\hertz}, and the after \SI{27}{\kilo\hertz} the signal is indistinguishable from the noise.
+    After testing for delays, we also measured the frequency response of the NTX-1004PZ piezo speaker. We placed two speakers 17 feet apart, and using a function generator we transmitted a square wave at 8vPP and swept from \SI{20}{\kilo\hertz} to \SI{30}{\kilo\hertz} and back down over the course of 20 seconds. We attached an oscilloscope to the receiving speaker and captured the power at each frequency using the FFT mode, persisting the display over the course of the sweep to see how the frequency response changes across our frequency range. Figure \ref{fig:frequency_response} shows the results of this experiment. From this experiment, we learned that the best frequency response is achieved at \SI{22}{\kilo\hertz}, and the after \SI{27}{\kilo\hertz} the signal is indistinguishable from the noise.
 
     \begin{figure}[H]
       \centering
@@ -301,24 +301,29 @@
       \label{fig:frequency_response}
     \end{figure}
 
-	\subsection{Optical Flow}
+    This experiment shows that any ultrasonic signals emitted by the beacons must be within the 20-27\SI{}{\kilo\hertz} range. For fixed frequency signals, \SI{22}{\kilo\hertz} should be used. Lower frequencies will be detectable and painful or annoying to humans, and higher frequencies will be undetectable.
 
-    Preliminary testing has been done using a Microsoft USB camera using the sample code provided for dense optical flow in OpenCV. In the screenshot below it can be see in the window labeled flow that there are a variety of green dots on the screen. These are the points that dense optical flow has identified. There is also a green line which is the motion vector of which way the frames are moving. The middle window labeled HSV flow is adding color to the different points that are currently the best for tracking on the frame. The bottom window labeled glitch is the current frame and previous ones overlaid showing all of the motion that has happened.
+	\subsection{OpenCV Optical Flow Sample Code}
+
+    Preliminary testing with optical flow was done using a Microsoft USB camera using the sample code provided in OpenCV. In the screenshot below the window labeled flow that there are a variety of green dots on the screen. These are the points that dense optical flow has identified. There is also a green line which is the motion vector of which way the frames are moving. The middle window labeled HSV flow is adding color to the different points that are currently the best for tracking on the frame. The bottom window labeled glitch is the current frame and previous ones overlaid showing all of the motion that has happened.
 
     \begin{figure}[H]
       \centering
-      \includegraphics[scale=0.75]{./images/optflow.png}
-      \caption{Screenshot of optflow running from OpenCV samples}
+      \includegraphics[width=0.49\linewidth]{./images/optflow.png}
+      \includegraphics[width=0.49\linewidth]{./images/optflow_2.png}
+      \caption{Screenshot of the opencv sample program \texttt{lk\_track.py} on video collected on a practice FRC field. Aruco tags provide excellent targets for Lucas-Kanade tracking.}
       \label{fig:opt_flow}
     \end{figure}
 
-    Testing was then done with the demo for Lucas Kanade based optical flow. Tests were done using lkdemo.cpp which was a sample file provided by OpenCV. Tests were done to see how running this program on a laptop verse the RoboRIO and compare the time they took to run the code. The laptop that the code was run on has a 2.8 GHz Intel 4 Core i7 processor for reference. A chart below was made of the time that each program took to run 100 frames in seconds.
+  \subsection{Benchmarking OpenCV Processing Times}
+
+    This test compares computation time for optical flow with OpenCV. Tests were done using \texttt{lkdemo.cpp} which was we modified from a sample file provided by OpenCV. We compare this program on a laptop verse the RoboRIO and compare the time they took to run the code. The laptop used has a 2.8 GHz Intel 4 Core i7 processor. A chart below was made of the time that each program took to run 100 frames in seconds.
 
     \begin{table}[H]
       \centering
       \begin{tabular}{l|l|l|}
         \cline{2-3}
-        & Laptop (s) & RoboRIO (s) \\
+        & Laptop (sec) & RoboRIO (sec) \\
         \cline{2-3}
         & 3.638 & 8.429 \\
         & 4.184 & 8.429\\
@@ -326,32 +331,34 @@
         & 3.639 & 8.429 \\
         & 4.184 & 8.429 \\
         \hline
-        \multicolumn{1}{|l|}{Average} & 26 & 12 \\
+        \multicolumn{1}{|l|}{Average (sec)} & 3.8566 & 8.429 \\
+        \multicolumn{1}{|l|}{Average (FPS)} & 26 & 12 \\
         \hline
       \end{tabular}
       \caption{Time for 100 frames to run using OpenCV on laptop verse RoboRIO}
       \label{table:optical_flow_benchmark}
     \end{table}
 
-    After measuring each 5 times to check for repeatability it can be seen looking at the chart except for the last row how fast in seconds it took for each of the devices to run 100 frames. The last row frames per second was calculated for each device with the laptop reading approximately 26 FPS and the RoboRIO reading 12 FPS. While the laptop was over twice that of the RoboRIO the 12 FPS rate is still fast enough to meet the needs of the project. Other preliminary tests were done with shaking the camera as the program was running after having it initialize the image with marked pixels it had deemed best for measuring. After some shaking of the camera most marked pixels had stayed and only ones that were causes to go off screen by the shaking disappeared. The pixels that the program had decided to measure were based off of what types of pixels work best for Lucas Kanade base optical flow described in the research section of the paper		.
+    We performed these measurements 5 times to check for repeatability. From these numbers, we conclude the laptop was just over twice as fast that of the RoboRIO. However, the 12 FPS rate is still fast enough for our project requirements (see Section \ref{design_criteria})
 
-  \subsection{Camera and ArUco Tag}
+  \subsection{Detecting ArUco Tags at a Distance}
+     % This test _must_ be redone or removed entirely.
 
-    	We performed an experiment on clarity of ArUco tags with respect to textures and distance using ArUco tags with a 720p web camera. Six ArUco codes with different IDs were generated by an online ArUco tag generator. These tags have 3 different sizes: \SI{100}{\milli\meter}, \SI{150}{\milli\meter}, \SI{195}{\milli\meter} and 2 different textures: matte, reflective. Those tags were taped together on plywood.
+      %We performed an experiment on clarity of ArUco tags with respect to textures and distance using ArUco tags with a 720p web camera. Six ArUco codes with different IDs were generated by an online ArUco tag generator. These tags have 3 different sizes: \SI{100}{\milli\meter}, \SI{150}{\milli\meter}, \SI{195}{\milli\meter} and 2 different textures: matte, reflective. Those tags were taped together on plywood.
 
-    A program using OpenCV ArUco library was ran for 100 frames to count the times of different tags were recognized. For each distance, the program was ran 3 times and the average of the shown up times was calculated. The results of the experiments were shown in the diagram below (Figure \ref{fig:aruco_clarity}).
+    %A program using OpenCV ArUco library was ran for 100 frames to count the times of different tags were recognized. For each distance, the program was ran 3 times and the average of the shown up times was calculated. The results of the experiments were shown in the diagram below (Figure \ref{fig:aruco_clarity}).
 
-    \begin{figure}[H]
-      \centering
-      \includegraphics[width=1\linewidth]{./images/camera_aterm_experiment.png}
-      \caption{Clarity of ArUco tags experiment}
-      \label{fig:aruco_clarity}
-    \end{figure}
-    There must be other factors other than textures and distances significantly changing the result of this experiment. A similar but improved experiment will be done in the future.
+    %\begin{figure}[H]
+      %\centering
+      %\includegraphics[width=1\linewidth]{./images/camera_aterm_experiment.png}
+      %\caption{Clarity of ArUco tags experiment}
+      %\label{fig:aruco_clarity}
+    %\end{figure}
+    %There must be other factors other than textures and distances significantly changing the result of this experiment. A similar but improved experiment will be done in the future.
 
   \subsection{Collecting Ground-Truth with VICON Motion Capture}
 
-    The ground truth data for measuring accuracy and precision is obtained using a VICON brand Motion Capture system. This comprises a VICON Lock+ data processor and 8 Vero infrared cameras. These can collect 2.2 megapixels of data at maximally 330 FPS and are designed for capturing human motion in small spaces. The space used for experimentation was 19x14 feet. The pose of the robot is tracking using three retro-reflective markers. These are positioned at known distances such that the transform between the centroid of the markers and the centroid of the robot is easily obtained. A scalene triangle laser cut from acrylic was used as a guide.
+    To evaluate the accurate of our system and to help with tuning various constants in the system we need a source of ground-truth state information. The ground truth data for measuring accuracy and precision is obtained using a VICON brand Motion Capture system. This comprises a VICON Lock+ data processor and 8 Vero infrared cameras. Our system can collect 2.2 megapixels of data and is designed for capturing human motion in small spaces. In our experiments, the space used for experimentation was 19x14 feet. The pose of the robot is tracked using three retro-reflective markers. These are positioned at known distances such that the transform between the centroid of the markers and the centroid of the robot is easily obtained. A scalene triangle laser cut from acrylic was used as a guide.
 
     \begin{figure}[H]%
         \centering
@@ -362,7 +369,7 @@
         \label{fig:viconSetup}%
     \end{figure}
 
-    The camera system captures data at 100Hz. To synchronize data collection, the RoboRIO sends a 5V signal to the Lock+ processor, and a UDP packet is transmitted to the Jetson TK1. This data is synchronous to within a few (1-2) milliseconds. Using the same markers, the pose of the AruCo tags is also measured. Preliminary testing suggests that the odometry and IMU datasets alone are insufficient for position tracking when the robot is prone to skidding. Camera data has not been processed, so results are omitted.
+    In our experiments, the camera system captures data at 100Hz. To synchronize data collection, the RoboRIO sends a 5V signal to the Lock+ processor, and a UDP packet is transmitted to the Co-Processor running the camera. This data is synchronous to within $\approx$\SI{500}{\micro\second}. Using the same markers, the pose of the AruCo tags is also measured.
 
     \begin{figure}[H]%
       \centering
@@ -373,7 +380,7 @@
       \label{fig:positionData}%
     \end{figure}
 
-    Because the VICON system is meant for high-resolution tracking in a small area, a robot with a large footprint and wheels prone to skidding may be inappropriate for early tests. Further testing is necessary using a smaller robot and a varying density of fiducial markers to obtain useful accuracy and precision data.
+    % FIXME redo the results and change out the pictures above now that we have better results
 
   \subsection{The Doppler Effect on Ultrasonic}
 
@@ -385,21 +392,20 @@
 
   \subsection{Characteristics of Piezo Transducers}
 
+    Throughout this project we also discovered several interesting characteristics of our piezo speakers. First, we note that emitting square versus sine waves does not seem to effect the received signal, given the same amplitude and frequency. Essentially, this means that even if the transmitting speaker is being moved like a square wave, the receiving transducer will simply resonate at the same frequency and the received signal will be a sinusoidal wave.
     % FIXME
-		5 db loss over 15 feet. At 17 feet away, we saw best signal strength at 22.5kHz. The signal db is about 6.2 dB SNR! Noise floor is -58.7dB? what does that mean? If we measure a 1 volt RMS (353.5 mv peak-to-peak) sine wave, and the oscilloscope says -11 db? What does that mean?
-
-    Emitting sine wave works just as well as square wave.
+		%5 db loss over 15 feet. The signal db is about 6.2 dB SNR! Noise floor is -58.7dB? What does that mean? If we measure a 1 volt RMS (353.5 mv peak-to-peak) sine wave, and the oscilloscope says -11 db? What does that mean?
 
 	\subsection{Co-Processors for Image Processing}
 
-    We evaluated the Raspberry PI 3 and the NVidia TK1. Neither was capable of recording 480p30, but either was good enough to read and process 480p30 just not save to video. % FIXME: more on what each platform is capable of
+    Since our system requires processing of images from a video stream, we evaluated the Raspberry Pi 3 and the NVidia TK1 as potential co-processors. We ruled out the RoboRIO for image processing because many teams in FRC have found the RoboRIO insufficient for vision processing, and because we did not intend for computational efficiency to be a key criteria of this project. Further still, using a coprocessor allows us to write and run whatever our system requires, irrespective of how any teams actual robot code is operating. % FIXME: More testing here. How high FPS/resolution can we get on each platform?
 
 	\subsection{Effect of Frame Rate and Resolution on ArUco Tag Detection}
 
     % also compare position estimates between each of the cameras
     % compare graphically over time
-    % compare inidivual points in frames
-    % compare covariance after kalman filtering
+    % compare individual points in frames
+    % compare covariance after Kalman filtering
 
 	\subsection{Update rate of localization from ArUco Tags}
 
@@ -411,11 +417,11 @@
 
 	\subsection{Evaluating NavX Location API}
 
-    % FIXME: how good is GetWorldX? show mocap + nypro circles results
+    % FIXME: how good is GetWorldX? Show mocap + nypro circles results
 
 	\subsection{Latency over the Robot Network}
 
-		It is important that all of our sensor data be time stamped so we can account for latency in our state estimation. The data collected on the NavX is time stamped on the NavX, and the encoder data is stamped when it is read on the RoboRIO. This time stamped data is sent to the TK1 over UDP. UDP was chosen because it was the easiest method with satisfactory speed. To test this, we wrote a simple program that sends 96 bytes of UDP data between the RoboRIO and the TK1. We recorded the round trip time of these packets, which can be seen in Figure \ref{fig:udp_timing}. The latency was \SI{0.5}{\milli\second} on average, which is much faster than any of our sensors, and therefore is fast enough for us to transmit and process the data before new data arrives.
+		It is important that all of our sensor data be time stamped so we can account for latency in our state estimation. The data collected on the NavX is time stamped on the NavX, and the encoder data is stamped when it is read on the RoboRIO. This time stamped data is sent to the TK1 over UDP. UDP was chosen because it was the easiest method with satisfactory speed. To test this, we wrote a simple program that sends 96 bytes, an upper bound on the size of all our stamped sensor data, of UDP data between the RoboRIO and the TK1. We recorded the round trip time of these packets, which can be seen in Figure \ref{fig:udp_timing}. The round-trip latency was \SI{0.5}{\milli\second} on average, which is much faster than any of our sensors, and therefore is fast enough for us to transmit and process the data before new data arrives.
 
 		\begin{figure}[H]
 			\centering
@@ -424,23 +430,32 @@
 			\label{fig:udp_timing}
 		\end{figure}
 
-		Another importnat problem is time synchronization. The time stamps on all the data must be in reference to some common time source. To achieve this effect, we use Christian's Algorithm \cite{cristian_probabilistic_1989}. Specifically, we send a packet stamped with the current time on the RoboRIO to the TK1, the TK1 adds its own time stamp and responses, the and RoboRIO then add half the round trip time to the time sent by the TK1. This allos the sensor data sent from the RoboRIO to be synchronized with the clock on the TK1.
+		Another important problem is time synchronization. The time stamps on all the data must be in reference to some common time source. To achieve this effect, we use Christian's Algorithm \cite{cristian_probabilistic_1989}. Specifically, we send a packet stamped with the current time on the RoboRIO to the TK1, the TK1 adds its own time stamp and responses, the and RoboRIO then add half the round trip time to the time sent by the TK1. This allows the sensor data sent from the RoboRIO to be synchronized with the clock on the TK1.
 
 \section{System Specification} \label{specs}
 
-  \subsection{Design Criteria}
+  \subsection{Design Criteria} \label{design_criteria}
 
     Here we present our goals and the criteria our system must meet in order to be successful. Broadly, we consider the following factors to be those which are important to the success of our system.
     \begin{enumerate}
-      \item \textbf{Accuracy}\\ how close our position estimates are to ground truth.
-      \item \textbf{Precision}\\ how close our position estimates are to each other given the same ground truth.
-      \item \textbf{Update Rate}\\ how quickly does our system provide position estimates.
-      \item \textbf{Accessibility}\\ how affordable is our system, how difficult is it to make, and how easy is it for teams to use.
+      \item \textbf{Accuracy}\\ How close our position estimates are to ground truth.
+      \item \textbf{Precision}\\ How close repeated position estimates are to each other given the same ground truth.
+      \item \textbf{Update Rate}\\ How quickly does our system provide position estimates.
+      \item \textbf{Accessibility}\\ How affordable is our system, how difficult is it to make, and how easy is it for teams to use.
     \end{enumerate}
 
-    To come up with hard numbers for these criteria, we first performed a few simple calculations based on our knowledge of FRC. First, we consider what teams would want to use position information for, and decided that the applications requiring the most accuracy are shooting and autonomous pick of game pieces at known locations. Both of these require the position estimates to be close to the true position of the robot. From there, we know that most FRC shooting and pickup mechanisms will work within $\pm$\SI{10}{\centi\meter}. Next, we decided the application requiring the most precision would be path following. If position estimates are imprecise and jump around rapidly, smooth path following will be difficult. From our experience with path following, we estimated that $\pm$\SI{5}{\centi\meter} would be sufficient. For update rate, we considered what the maximum distance a robot could move within a period and used that to decide what our update rate should be. The very fastest FRC robots move \SI{6}{\meter\per\second}, which at an update rate of every \SI{20}{\milli\second} is a distance of $0.02*6 =$ \SI{0.12}{\meter}. The rate of \SI{20}{\milli\second} is a realistic cycle time in FRC, and we feel \SI{12}{\centi\meter} is sufficient given the speed. For accessibility, we acknowledged that teams cannot spend more than \$400 on any part, and that most times source parts from websites AndyMark, Cross-the-road Electronics, and National Instruments among other suppliers. We are also conscious that many FRC teams have limited or cluttered spaces for testing their robots, and may be working in a shared space that must be clean and usable after their work sessions.
+ This goal for our system are as follows:
 
-    Using all of these informal estimates as a starting point, we conducted a survey of FRC students, Alumni, and mentors. We received 65 responses in total, and used the results of this survey to solidify our design criteria. The full response of this survey are presented in \nameref{appendix:survey}. In summary, the median for accuracy was \SI{10}{\centi\meter} in x,y and \ang{5} in yaw. Our survey did not include questions about precision and update rate, because they depend on what position is used for. Instead, we asked if students would try path planning if they had a localization system, which would back up our estimate of precision. Our survey indicated that 90\% of students would try to make the robot autonomously follow paths. Therefore, our precision estimated based on path planning as an application is supported by our survey. Update rate was not addressed in the survey because we didn't think FRC students would have informed opinions on this metric. Finally, we asked several questions about the accessibility requirements. A cost of under \$200 was deemed acceptable by 84.6\% of responses, and so we have made \$200 our goal for cost. Furthermore, we learned that the amount of space in teams shops varies from a 5 by 5 foot space up to several thousand square feet, but the median shop size is 775 $ft^2$, which one can imagine as a 25 by 30 ft space. In terms of access, about 76.5\% of teams could leave up tags or beacons, with the others stating that they must clean up everything because they work in a shared space such as a classroom. Lastly, we asked students what sensors they were familiar with. The most familiar sensors were cameras (90\%), followed by encoders (84.6\%), then IMUs (60\%). Therefore, it would be beneficial to incorporate cameras, encoders, and IMUs because teams are already familiar with them.
+    \begin{enumerate}
+      \item \textbf{Accuracy} of $\pm$\SI{10}{\centi\meter} and $\pm$\ang{5}
+      \item \textbf{Precision} of $\pm$\SI{5}{\centi\meter} and $\pm$\ang{2}
+      \item \textbf{Update Rate} at \SI{20}{\milli\second}/50FPS, with global updates at \SI{100}{\milli\second}/10FPS
+      \item \textbf{Accessibility} with cost under \$200 for teams.
+    \end{enumerate}
+
+    To come up with hard numbers for these criteria, we first performed a few simple calculations based on our knowledge of FRC. First, we consider what teams would want to use position information for, and decided that the applications requiring the most accuracy are shooting and autonomous pick of game pieces at known locations. Both of these require the position estimates to be close to the true position of the robot. From there, we estimate that most FRC shooting and pickup mechanisms will work within $\pm$\SI{10}{\centi\meter}. Next, we decided the application requiring the most precision would be path following. If position estimates are imprecise and jump around rapidly, smooth path following will be difficult. From our experience with path following, we estimated that $\pm$\SI{5}{\centi\meter} and  $\pm$\ang{2} would be sufficient. For update rate, we considered what the maximum distance a robot could move within a period and used that to decide what our update rate should be. The very fastest FRC robots move \SI{6}{\meter\per\second}, which at an update rate of every \SI{20}{\milli\second} is a distance of $0.02*6 =$ \SI{0.12}{\meter}. The rate of \SI{20}{\milli\second} is a realistic cycle time in FRC, and we feel \SI{12}{\centi\meter} is sufficient given the speed. For accessibility, we acknowledged that teams cannot spend more than \$400 on any part, and that most times source parts from websites AndyMark, Cross-the-road Electronics, and National Instruments among other suppliers. We are also conscious that many FRC teams have limited or cluttered spaces for testing their robots, and may be working in a shared space that must be clean and usable after their work sessions.
+
+    Using all of these informal estimates as a starting point, we conducted a survey of FRC students, alumni, and mentors. We received 65 responses in total, and used the results of this survey to solidify our design criteria. The full response of this survey are presented in \nameref{appendix:survey}. In summary, the median for accuracy was \SI{10}{\centi\meter} in x,y and \ang{5} in yaw. Our survey did not include questions about precision and update rate, because they depend on what position is used for. Instead, we asked if students would try path planning if they had a localization system, which would back up our estimate of precision. Our survey indicated that 90\% of students would try to make the robot autonomously follow paths. Therefore, our precision estimated based on path planning as an application is supported by our survey. Update rate was not addressed in the survey because we didn't think FRC students would have informed opinions on this metric. Finally, we asked several questions about the accessibility requirements. A cost of under \$200 was deemed acceptable by 84.6\% of responses, and so we have made \$200 our goal for cost. Furthermore, we learned that the amount of space in teams shops varies from a 5 by 5 foot space up to several thousand square feet, but the median shop size is 775 $ft^2$, which one can imagine as a 25 by 30 ft space. In terms of access, about 76.5\% of teams could leave up tags or beacons, with the others stating that they must clean up everything because they work in a shared space such as a classroom. Lastly, we asked students what sensors they were familiar with. The most familiar sensors were cameras (90\%), followed by encoders (84.6\%), then IMUs (60\%). Therefore, it would be beneficial to incorporate cameras, encoders, and IMUs because teams are already familiar with them. However, in order to not place extra constraints on sourcing parts, we choose to ignore the constraint that our system meet the FRC-Legal or Off-The-Shelf requirements of FRC.
 
     Ultimately, we formulated design criteria based on our own experience with FRC and with localization, as well as by conducting a survey of the needs, experience, and opinions of FRC participants. These design criteria will help us pick which localization techniques to pursue as well as define the goals for our system.
 
