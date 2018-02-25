@@ -432,6 +432,8 @@
 
   \subsection{Detecting Ultrasonic Signals on the PSoC 5LP}
     \subsubsection{Limits of the ADC and DAC on the PSoC 5LP}
+	The VDAC8 on the psoc 5LP is limited by its speed setting options. There are only two options for what speed the DAC can be set to which are slow and high. The datasheet says that the slow option makes the settling time slower but consumes less operating current and the high mode does the opposite. The datasheet provides no further information about these settings so there is not a provided way to know the speed of the DAC. The DAC also is only 8 bit it can only be set to values between 0 and 255 which has not yet been a problem but is a limiting factor in general.
+    The Delta Sigma ADC has a resolution range of 8-20 bits.The lower the resolution the larger the range for conversion rate in samples per second. But even with the lowest resolution of 8 bits the range is only 8000-192000 which limits the minimum and maximum sample rate that can be used.
 
   \subsection{Ultrasonic Beam Angle \& Full Pattern}
 
