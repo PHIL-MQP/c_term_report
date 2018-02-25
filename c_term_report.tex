@@ -250,9 +250,26 @@
 
   \subsection{Accuracy of Gyro Integration versus On-Chip Yaw Calculation}
 
+    We asked the question of whether the provided on-chip \texttt{GetYaw()} method is more or less accurate than what can be computed from the raw gyroscope readings. To answer this question, we first used implemented a simple procedure for computing yaw from the gyroscope readings. First, we apply the calibration parameters (see section \ref{imu_calibration}), then a base-frame rotation. This base frame rotation accounts for the mounting of the NavX on our robot, which may not be perfectly flat. To do this, we let the robot sit still for a second or two and compute the rotation matrix that rotates the accelerometers readings to be $[0,0,1]$, which is the value you'd expect if the NavX were flat. Having calibrated and rotated the raw gyroscope readings in all axis, we can consider only the yaw or $z$ axis of the gyroscope. We use a 1-step forward Euler's method to integrate these readings, which are in degrees/second. This gives us our yaw angle over time.
+
+    To compare this procedure with ground truth, we log the raw gyro values values while driving in the motion capture studio, then perform the calculations described above to get yaw. Figure \ref{fig:yaw_comparison} shows our computes yaw with the yaw reported by motion capture. Due to some strange wrap-around behavior, the mocap yaw has a small blip in value that can be safely ignored. Overall, our yaw value matches the ground truth very closely, with a maximum error of \ang{2.497} in the first 1000 samples (20 seconds).
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.75\linewidth]{./images/yaw_mocap_versus_integration.png}
+      \caption{Comparison of yaw values between our algorithm and motion capture}
+      \label{fig:yaw_comparison}
+    \end{figure}
+
+    Next, we compared the on-chip yaw to our integrated yaw method. %TODO: have some comparison between on chip and mocap or on chip and gyro integration
+
+    % FIXME: log raw gyro during next mocap!
+
   \subsection{Characterising Drift in the Accelerometer and Gyroscope}
 
   \subsection{Localizing with IMU and Encoder on the Turtlebot}
+
+    % not sure this should actually be a section...
 
   \subsection{Measuring Beacon Delays}
 
@@ -290,7 +307,7 @@
       \label{fig:us_delay_scope}
     \end{figure}
 
-  \subsection{Measuring Frequency Response}
+  \subsection{Measuring Frequency Response} \label{section:frequency_response}
 
     After testing for delays, we also measured the frequency response of the NTX-1004PZ piezo speaker. We placed two speakers 17 feet apart, and using a function generator we transmitted a square wave at 8vPP and swept from \SI{20}{\kilo\hertz} to \SI{30}{\kilo\hertz} and back down over the course of 20 seconds. We attached an oscilloscope to the receiving speaker and captured the power at each frequency using the FFT mode, persisting the display over the course of the sweep to see how the frequency response changes across our frequency range. Figure \ref{fig:frequency_response} shows the results of this experiment. From this experiment, we learned that the best frequency response is achieved at \SI{22}{\kilo\hertz}, and the after \SI{27}{\kilo\hertz} the signal is indistinguishable from the noise.
 
@@ -382,11 +399,39 @@
 
     % FIXME redo the results and change out the pictures above now that we have better results
 
-  \subsection{The Doppler Effect on Ultrasonic}
-
   \subsection{Detecting Simulated Chirps in MATLAB}
 
-  \subsection{Limits of the ADC and DAC on the PSoC 5LP}
+    In order to examine the theoretical limits of our ultrasonic chirp detection, we created synthetic chirps and examine how pattern matching filters would work to detect them. For our beacons to work we must be able to very precisely find the start of a chirp given a buffer of ADC readings, and we simulate this in MATLAB. In these experiments, we construct our chirps using matlab's \texttt{chirp} function, and we sweep from 20-27\SI{}{\kilo\hertz} (see section \ref{section:frequency_response} for justification). This signal is shown in figure \ref{fig:unshifted_no_noise_chirp}. The zoomed in version highlights that given a reasonable ADC speed of 108ksps, we will only see a very rough sine wave.
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\linewidth]{./images/unshifted_no_noise_chirp.png}
+      \includegraphics[width=1\linewidth]{./images/unshifted_no_noise_chirp_zoomed.png}
+      \caption{Unshifted, No-Noise, Chirp, 20-27\SI{}{\kilo\hertz}}
+      \label{fig:unshifted_no_noise_chirp}
+    \end{figure}
+
+    Given this original signal, we then pad the signal and add noise. The result of this is shown in figure \ref{fig:repeated_signal}. Finally, use our original clear signal as a pattern, and convolve it with our signal. The result of this is shown in figure \ref{fig:pattern_matching}.
+
+    \begin{figure}
+      \centering
+      \includegraphics[width=1\linewidth]{./images/repeated_noisy_signal.png}
+      \caption{Both the doppler-shifted and unshifted full noisy signals.}
+    \end{figure}
+
+    \begin{figure}
+      \centering
+      \includegraphics[width=1\linewidth]{./images/pattern_matching.png}
+      \caption{The peaks in the center indicate the pattern matching the noisy signals closely.}
+      \label{fig:pattern_matching}
+    \end{figure}
+
+    \subsubsection{The Doppler Effect on Ultrasonic}
+
+    Using these simulated chirps, we ask the question of whether the doppler effect of a moving FRC robot will make the signal undetectable with simple pattern matching. The plots above show what happens if a doppler shift of a robot moving \SI{5}{\meter\per\second} is introduced. This speed causes a doppler shift of \SI{291.3}{\hertz}, and after applying pattern matching using the unshifted filter we see that the chirp is detected \SI{192.5}{\micro\second} early, which corresponds to \SI{6.6}{\centi\meter} of error, which is within our requirements (see section \ref{section:system_spec}). Furthermore, when the doppler has no effect, the error of our simulated detection is just \SI{2.5}{\milli\meter}, which is well within our requirements.
+
+  \subsection{Detecting Ultrasonic Signals on the PSoC 5LP}
+    \subsubsection{Limits of the ADC and DAC on the PSoC 5LP}
 
   \subsection{Ultrasonic Beam Angle \& Full Pattern}
 
@@ -402,7 +447,30 @@
 
     Since our system requires processing of images from a video stream, we evaluated the Raspberry Pi 3 and the NVidia TK1 as potential co-processors. We ruled out the RoboRIO for image processing because many teams in FRC have found the RoboRIO insufficient for vision processing, and because we did not intend for computational efficiency to be a key criteria of this project. Further still, using a coprocessor allows us to write and run whatever our system requires, irrespective of how any teams actual robot code is operating. % FIXME: More testing here. How high FPS/resolution can we get on each platform?
 
+  \subsection{How Far Apart Should Tags be Placed?} \label{section:tag_placement}
+
+    % How far apart should tags be
+
 	\subsection{Effect of Frame Rate and Resolution on ArUco Tag Detection}
+
+    We explore the effect of frame rate and resolution on the frequency with which tags are detected. This frequency of detected tags is an important metric because it sets the standard for how long our dead-reckoning methods must run without receiving an update to compensate for drift. Furthermore, since the FPS and resolution of a camera correlates with cost, we want to know whether a cheap camera is sufficient for tag detection.
+
+      To answer this question, we used three cameras simultaneously recording footage from the robot as we drove around a mock FRC Field. The tags were placed roughly every 6 feet (according to results of section \ref{section:tag_placement}) and the robot was driven through a simulated FRC game for \SI{60}{\second}. We then compare how frequently tags were detected by looking at gaps between detections. Table \ref{table:tag_detection_comparison} shows a comparison of various key metrics between the different resolution/FPS pairings. The full plots showing all gaps in the run is shown in appendix \ref{appendix:tag_detection}
+
+    \begin{table}[H]
+      \begin{tabular}{|c|c|c|c|c|c|} \hline
+        Condition & Worst-Case & 95th percentile & Mean & Median & Mode \\ \hline
+        PS4 Eye 480p30 & 4.565 & 0.100 & 0.062 & 0.033 & 0.033 \\ \hline
+        PS4 Eye 480p60 & \textbf{3.049} & \textbf{0.033} & \textbf{0.032} & \textbf{0.017} & \textbf{0.017} \\ \hline
+        C920 1080p15 & 3.196 & 0.767 & 0.162 & 0.068 & 0.068 \\ \hline
+      \end{tabular}
+      \caption{480p30 means 640x480 at 30fps, 480p60 means 640x480 at 60fps, 1080p15 means 1920x1080 at 15fps. The best settings by all measures was the PS3Eye camera at 60fps.}
+      \label{table:tag_detection_comparison}
+    \end{table}
+
+    Arguably the most important metric here is the 9th percetile metric, which says that 95\% of of the time gaps between detected tags are less than that number. Generally, that number is quite close to the mean frame rate which means that usually you get one tag detected in every frame, but this is of course not always true. It's important to note that just because a there was a tag detected in the frame doesn't mean we get a reliable position estimate from that tag. So these numbers are not the same as the how frequently an actual position is received, which is what we truly care about.
+
+    If we now consider only valid position estimates, and not just any detected tag, ... % FIXME: add kacper's analysis which is subtly different
 
     % also compare position estimates between each of the cameras
     % compare graphically over time
@@ -446,7 +514,7 @@
       \item \textbf{Accessibility}\\ How affordable is our system, how difficult is it to make, and how easy is it for teams to use.
     \end{enumerate}
 
- This goal for our system are as follows:
+    This goal for our system are as follows:
 
     \begin{enumerate}
       \item \textbf{Accuracy} of $\pm$\SI{10}{\centi\meter} and $\pm$\ang{5}
@@ -511,7 +579,7 @@
 
     % FIXME: redo this section
 
-  \subsection{?? stupid title}\label{section:system_spec}
+  \subsection{System Requirements}\label{section:system_spec}
 
     Based on the extensive literature review, the few preliminary experiments we've conducted, and our design criteria, we eliminated our initial list of possible techniques down to the following five:
 
@@ -544,26 +612,6 @@
       \item Provide the optimal analysis or coverage of an empty FRC field and the 2018 field
       \item Fail gracefully when some of the sensing techniques are unreliable or failing
     \end{itemize}
-
-    These goals will hopefully constrain the scope of each localization technique such that all of them can be incorporated to some degree. Furthermore, we have drafted a timeline of which of these goals we will focus on over the course of the year. For example, by choosing to start with encoders, IMUs, and cameras, we will be able to have a working localization system even without the other techniques. Additionally, we hope that by giving an end date for some of the components we will be able to move on and not spend too long optimizing any one component.
-
-    \begin{itemize}
-      \item C Term:
-      \begin{itemize}
-        \item Finish base-frame calibration of IMU
-        \item Meet goals for beacons
-        \item Decide between optical flow and IMU + encoders for dead reckoning
-        \item Filter each sensor together into one position update
-      \end{itemize}
-      \item D Term:
-      \begin{itemize}
-        \item Meet documentation goals for teams
-        \item Provide the designs and the code for all components
-        \item Write the final report
-      \end{itemize}
-    \end{itemize}
-
-    As of the end of B term, we have yet to demonstrate position information from the IMU and encoders on our test robot. We have shown position estimates from encoders are accurate when the wheels do not slip, but that is not realistic to the FRC environment. We have also separately shown that there exists some biases and scaling factors that allows us to double integrate our accelerometer readings and get a reasonable position estimate, but we have no demonstrated a successful methodology for computing these calibration values. Therefore, we are left with a choice to continue to work on IMU and encoders, or to use optical flow. Both would meet our requirements for high-speed local position updates, and would nicely compliment beacons and cameras with tags. In order to decide whether to explore optical flow or continue exploring IMU and encoders, we will return to existing research and determine which technique has performed better in other systems. If we can show that dead reckoning with IMU and encoders in an environment like FRC meets our system specification requirements, we will continue that method. If not, then we will pursue optical flow instead.
 
   \subsection{Implementation Details}
 
@@ -705,6 +753,10 @@
 
   Over the course of A Term, we conducted thorough background research on various methods for localization and evaluated their performance. Based on numerous reports for each localization technique, a survey of FRC students and alumni, and our own knowledge of the challenges of localization for FRC we narrowed down the list of possible techniques to encoders, IMUs, beacons, cameras and tags, and optical flow. Each of these methods has been shown to work in other indoor mobile robot environments, and together they make up for the weakness of each individual method. Our strategy will be to apply each of these five techniques to the degree we believe is necessary to meet our design criteria, rather than to choose one method and optimize it deeply. Our performance will be judged against the design criteria stated above, and we have developed goals and a timeline to guide our work moving forward.
 
+\section{Acknowledgements}
+
+  We thank our advisors, Bradley Miller and William Michalson for their guidance. We also thank our sponsors, AndyMark and Kauai Labs for their generous donation of hardware. We'd like to thank Scott Libert and Eric Peters for their advice and guidance. Finally, we give a special thank you to FRC Team 261 Gael Force, for letting us use their practice field.
+
 \section{Appendix}
 
   \subsection{Appendix A}\label{appendix:survey}
@@ -712,7 +764,7 @@
     Survey Responses
 
     \begin{figure}[H]
-      %\centering
+      \centering
       \includegraphics[height=4.2cm]{./images/survey_angle.png}
       \includegraphics[height=4.2cm]{./images/survey_position.png}
       \includegraphics[height=4.2cm]{./images/survey_worth.png}
@@ -745,6 +797,22 @@
       \caption{The time of flight of radio over tens of centimeters is insignificant compared to the delay within the transmitter and receiver.}
       \label{table:rf-rx-tx}
     \end{table}
+
+  \subsection{Appendix C}\label{appendix:tag_detection}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\linewidth]{./images/detection_times_480p30.png}
+    \end{figure}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\linewidth]{./images/detection_times_480p60.png}
+    \end{figure}
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\linewidth]{./images/detection_times_1080p15.png}
+    \end{figure}
+
+
 
 \bibliographystyle{plain}
 \bibliography{phil-mqp}
