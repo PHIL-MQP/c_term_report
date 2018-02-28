@@ -194,7 +194,7 @@
 
   One of the key contributions of this MQP is an extensive set of emperical and theoretical results spanning many different localization techniques. This sections describes each of these experiments and explains how each test impacts the practical implementation of a complete localization system.
 
-  \subsection{IMU Calibration}
+  \subsection{IMU Calibration} \label{section:imu_calibration}
 
     From an early experiment collecting data on a Turtlebot, we saw that double integrating the accelerometer readings would not be accurate. This was expected, because it is well known the double integration will amplify any inaccuracies in accelerometer data. Therefore, we replicated the IMU calibration procedure described in \cite{tedaldi_robust_2014}, which accounts for many sources of error without requiring expensive external equipment. This calibration method was relatively to perform, and could be performed by FRC students. This calibration method corrects the misalignment, scaling, and biases in both accelerometer and gyroscope. This is done by solving for accelerometer calibration values that make the magnitude of acceleration during static intervals closest to 1, and then by solving for gyroscope calibration values that make the integral of gyroscope measurements between static intervals match the change in orientation between static positions. First, the IMU needed to be placed statically for a period of $T_{init}$ seconds. Next, by calculating the variance of the accelerometer data collected during that initialization period, a threshold for a static interval detector could be determined by applying a constant multiplier. After the initial waiting period, the IMU needs to be rotated an arbitrary amount and left in that orientation for 1 to 4 seconds. Each IMU position during the ``flip and wait'' period has to be distinct for calibration to be accurate. The entire ``flip and wait'' process has to be repeated 36 to 50 times. After all data was collected, an optimization proecdure was ran first on the accelerometer data to solve for the calibration parameters for misalignment, scaling, and bias that make the norm of the acceleration closest to 1. Then, a similar method was used for gyroscope calibration based on the success of accelerometer calibration. The quality of calibration of gyroscope was entirely based on the quality of the accelerometer calibration.
 
@@ -244,13 +244,13 @@
     \begin{figure}[H]
       \centering
       \includegraphics[width=1\linewidth]{./images/gyro_integration_y.png}
-      \caption{Integration of the gyroscope readings in the Y Axis. Method 1 is one-shot rotation, Method 2 is incremental rotation.}
+      \caption{Integration of the gyroscope readings in the Y Axis. Method 1 is one-shot rotation, Method 2 is incremental rotation. Incremental rotation is clearly more accurate.}
       \label{fig:gyro_integration}
     \end{figure}
 
   \subsection{Accuracy of Gyro Integration versus On-Chip Yaw Calculation}
 
-    We asked the question of whether the provided on-chip \texttt{GetYaw()} method is more or less accurate than what can be computed from the raw gyroscope readings. To answer this question, we first used implemented a simple procedure for computing yaw from the gyroscope readings. First, we apply the calibration parameters (see section \ref{imu_calibration}), then a base-frame rotation. This base frame rotation accounts for the mounting of the NavX on our robot, which may not be perfectly flat. To do this, we let the robot sit still for a second or two and compute the rotation matrix that rotates the accelerometers readings to be $[0,0,1]$, which is the value you'd expect if the NavX were flat. Having calibrated and rotated the raw gyroscope readings in all axis, we can consider only the yaw or $z$ axis of the gyroscope. We use a 1-step forward Euler's method to integrate these readings, which are in degrees/second. This gives us our yaw angle over time.
+    We asked the question of whether the provided on-chip \texttt{GetYaw()} method is more or less accurate than what can be computed from the raw gyroscope readings. To answer this question, we first used implemented a simple procedure for computing yaw from the gyroscope readings. First, we apply the calibration parameters (see section \ref{section:imu_calibration}), then a base-frame rotation. This base frame rotation accounts for the mounting of the NavX on our robot, which may not be perfectly flat. To do this, we let the robot sit still for a second or two and compute the rotation matrix that rotates the accelerometers readings to be $[0,0,1]$, which is the value you'd expect if the NavX were flat. Having calibrated and rotated the raw gyroscope readings in all axis, we can consider only the yaw or $z$ axis of the gyroscope. We use a 1-step forward Euler's method to integrate these readings, which are in degrees/second. This gives us our yaw angle over time.
 
     To compare this procedure with ground truth, we log the raw gyro values values while driving in the motion capture studio, then perform the calculations described above to get yaw. Figure \ref{fig:yaw_comparison} shows our computes yaw with the yaw reported by motion capture. Due to some strange wrap-around behavior, the mocap yaw has a small blip in value that can be safely ignored. Overall, our yaw value matches the ground truth very closely, with a maximum error of \ang{2.497} in the first 1000 samples (20 seconds).
 
@@ -419,6 +419,7 @@
       \centering
       \includegraphics[width=1\linewidth]{./images/repeated_noisy_signal.png}
       \caption{Both the doppler-shifted and unshifted full noisy signals.}
+      \label{fig:repeated_signal}
     \end{figure}
 
     \begin{figure}
@@ -433,9 +434,15 @@
     Using these simulated chirps, we ask the question of whether the doppler effect of a moving FRC robot will make the signal undetectable with simple pattern matching. The plots above show what happens if a doppler shift of a robot moving \SI{5}{\meter\per\second} is introduced. This speed causes a doppler shift of \SI{291.3}{\hertz}, and after applying pattern matching using the unshifted filter we see that the chirp is detected \SI{192.5}{\micro\second} early, which corresponds to \SI{6.6}{\centi\meter} of error, which is within our requirements (see section \ref{section:system_spec}). Furthermore, when the doppler has no effect, the error of our simulated detection is just \SI{2.5}{\milli\meter}, which is well within our requirements.
 
   \subsection{Detecting Ultrasonic Signals on the PSoC 5LP}
+
     \subsubsection{Limits of the ADC and DAC on the PSoC 5LP}
+
 	The VDAC8 on the psoc 5LP is limited by its speed setting options. There are only two options for what speed the DAC can be set to which are slow and high. The datasheet says that the slow option makes the settling time slower but consumes less operating current and the high mode does the opposite. The datasheet provides no further information about these settings so there is not a provided way to know the speed of the DAC. The DAC also is only 8 bit it can only be set to values between 0 and 255 which has not yet been a problem but is a limiting factor in general.
     The Delta Sigma ADC has a resolution range of 8-20 bits.The lower the resolution the larger the range for conversion rate in samples per second. But even with the lowest resolution of 8 bits the range is only 8000-192000 which limits the minimum and maximum sample rate that can be used.
+
+    \subsubsection{Effect of Chirp Bandwidth}
+
+    By sweeping over a larger frequency range, the error in detecting the start of the chirp decreases. I don't know why, but matlab simulation shows that it does.
 
   \subsection{Ultrasonic Beam Angle \& Full Pattern}
 
@@ -451,9 +458,85 @@
 
     Since our system requires processing of images from a video stream, we evaluated the Raspberry Pi 3 and the NVidia TK1 as potential co-processors. We ruled out the RoboRIO for image processing because many teams in FRC have found the RoboRIO insufficient for vision processing, and because we did not intend for computational efficiency to be a key criteria of this project. Further still, using a coprocessor allows us to write and run whatever our system requires, irrespective of how any teams actual robot code is operating. % FIXME: More testing here. How high FPS/resolution can we get on each platform?
 
-  \subsection{How Far Apart Should Tags be Placed?} \label{section:tag_placement}
+  \subsection{Evaluting The Placement of ArUco Tags} \label{section:tag_placement}
 
-    % How far apart should tags be
+    When doing localization with ArUco markers, generally the more markers that can be detected the better your pose estimates and maps will be. However, this is also a trade off with the amount of modificaiton required in the environment. We would like to have as few tags as possible in our environment to minimize the amount of work required to localize in that environment. To begin to answer this question, we consider how the spacing between tags on a mock FRC field effects the detection rate of tags.
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\linewidth]{./images/nypro_tag_spacing.png}
+      \caption{Tags placed on the Nypro practice field}
+      \label{fig:nypro_tag_spacing}
+    \end{figure}
+
+    We placed \SI{0.152}{\meter} tags every 1.5ft on a mock FRC field at Nypro (see Figure \ref{fig:nypro_tag_spacing}). We recorded video driving realistically around the field and counted how frequently we detected ArUco tags. We then filtered out tags by their ID numbers to simulate spacings of 3ft, 4.5ft, and 6ft. We report detection statistics for each of these spacings based on two different runs through the field in Table \ref{table:spacing_timing}. We also plot all the times between detections over the course of one of our runs in Figure \ref{fig:spacing_timing}. Our results show that, assuming reasonable camera settings of 480p30 (640x480, 30fps), the frequency of dat detection is essentially unchanged between 1.5ft and 6ft spacings. The only notable difference is the mean time between detections slowly rises as tags become further apart. Intuitively, this means that even 6ft between tags is close enough to expect to detect tags 10 times a second. More specifically, we can say that 95\% of the time we will detect a tag every \SI{0.1}{\second}. We do note that during our first trial, where our camera was accidentally only recording frames at 480p8 (yes, that's 8fps), the tag detection rate suffers more significantly as tag detection increases.
+
+    \begin{table}[H]
+      \centering
+      \begin{tabular}{|c|c|c|c|c|c|c|c|c|} \hline
+        spacing (ft) & \multicolumn{2}{c}{worst case (s)} & \multicolumn{2}{c}{95th percentile (s)} & \multicolumn{2}{c}{mean (s)} & \multicolumn{2}{c|}{median (s)} \\ \hline
+            & trial 1 & \textbf{trial 2} & trial 1 & \textbf{trial 2} & trial 1 & \textbf{trial 2} & trial 1 & \textbf{trial 2} \\ \hline
+        1.5 & 5.100 & \textbf{3.700} & 0.762 & \textbf{0.068} & 0.235 & \textbf{0.053} & 0.132 & \textbf{0.032} \\ \hline
+        3.0 & 5.231 & \textbf{3.700} & 0.932 & \textbf{0.100} & 0.269 & \textbf{0.061} & 0.132 & \textbf{0.032} \\ \hline
+        4.5 & 5.900 & \textbf{3.700} & 1.145 & \textbf{0.100} & 0.284 & \textbf{0.064} & 0.132 & \textbf{0.032} \\ \hline
+        6.0 & 7.832 & \textbf{3.700} & 1.343 & \textbf{0.100} & 0.335 & \textbf{0.070} & 0.132 & \textbf{0.032} \\ \hline
+      \end{tabular}
+      \caption{Tag detection metrics compared across tag spacings.
+      The larger spacings have slightly worse performance, but still usually provide updates at least 10 timers per second.
+      Trial 1 only recorded at 8fps, but is included for completeness. Trial 2 was 30fps.}
+      \label{table:spacing_timing}
+    \end{table}
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=1\linewidth]{./images/spacing_times.png}
+      \caption{Times between detected tags as a function of tag spacing. Spacings between 1.5ft and 6ft perform very similarly.}
+      \label{fig:spacing_timing}
+    \end{figure}
+
+
+    It is important to note several other factors that are not explored here, including how spacing and positioning effects the accuracy of detections. Furthermore, one should ask whether the specific locations of tags, not just the spacing between them, also effects detection accuracy and frequency. Intuitively, we claim that tags should be placed in locations where the robots camera is likely to be facing, such as feeding stations and goals. However, we do not emperically evaluate this claim.
+
+	\subsection{Statistics of CSCore Image Timestamps}
+
+    We use the built-in API of CSCore to get the time stamps (in microseconds) for each image captured. During many of our tests, we logged these times to files for offline processing. We now ask how much these time stamps vary from the requested FPS. This is important information to know, because it effects whether or not one can assume a truly constant FPS. We find that there is significant variation between any individual frames. Table \ref{table:fps_stats} shows key statistics about FPS over a multitude of recordings from our test robot. These recordings are taken from our tests at Nypro, with various requested frame rates and at various resolutions.
+
+    \begin{table}[H]
+      \centering
+      \begin{tabular}{|c|c|c|c|c|c|} \hline
+        Requested FPS & Resolution & Mean FPS & Median FPS & Min FPS & Max FPS \\ \hline
+        30 & 1920x1080 & 14.90 & 14.71 & 9.61 & 22.75 \\ \hline
+        30 & 1920x1080 & 15.11 & 14.71 & 10.00 & 27.83 \\ \hline
+        30 & 1280x720 & 8.17 & 7.59 & 2.29 & 14.78 \\ \hline
+        30 & 1280x720 & 8.35 & 7.60 & 2.00 & 14.75 \\ \hline
+        30 & 800x448 & 29.34 & 31.08  & 4.31 & 31.78 \\ \hline
+        60 & 640x480 & 59.43 & 60.02 & 3.53 & 62.48 \\ \hline
+        60 & 640x480 & 59.71 & 60.02 & 3.33 & 89.32 \\ \hline
+        30 & 640x480 & 30.00 & 30.01 & 3.76 & 30.13 \\ \hline
+        30 & 320x240 & 30.04 & 31.21 & 2.72 & 31.71 \\ \hline
+        30 & 320x240 & 30.03 & 31.22 & 3.33 & 32.30 \\ \hline
+        30 & 320x240 & 30.08 & 31.21 & 14.76 & 32.69 \\ \hline
+      \end{tabular}
+      \caption{Table of statics from a multitude of CSCore streams. We find that FPS can vary throughout normal operation.}
+      \label{table:fps_stats}
+    \end{table}
+
+    We observe that startup-lag is the true cause of low minimum FPS, and therefore does not cause significant issues unless pose estimates from the first two frames are critical. However, there are in fact cases where the camera exceeds the desired FPS but as much as 48\% in the case of 60fps. There are also several cases where the processing collecting and stamping these images was not powerful enough to acheive the requested FPS. For example, we requested 720p30 on a raspberry pi, but were only able to capture at $\approx$15fps. This is real constraint that must be handled in a camera based localization system, and so we report those results for completeness. However, our results show that, assuming the computer is powerful enough to acheive the requested FPS on average, there are only small variations on FPS over time. We provide two full plots of FPS over time in two of the more curious entries in table \ref{table:fps_stats} to be more illistrative of how time between frames can vary (figures \ref{fig:fps_plot_1} and \ref{fig:fps_plot_2}).
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.8\linewidth]{./images/fps_plot_2.png}
+      \caption{FPS over time for one instance of 240p30}
+      \label{fig:fps_plot_2}
+    \end{figure}
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.8\linewidth]{./images/fps_plot_1.png}
+      \caption{FPS over time for one instance of  480p60}
+      \label{fig:fps_plot_1}
+    \end{figure}
+
 
 	\subsection{Effect of Frame Rate and Resolution on ArUco Tag Detection}
 
@@ -481,7 +564,7 @@
     % compare individual points in frames
     % compare covariance after Kalman filtering
 
-	\subsection{Update rate of localization from ArUco Tags}
+	\subsection{Rate of position estimates from ArUco Tags}
 
 	\subsection{Benchmarking MarkerMapper with VICON Motion Capture}
 
