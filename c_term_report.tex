@@ -267,14 +267,27 @@
 
     % FIXME: log raw gyro during next mocap!
 
-  \subsection{Characterising Drift in the Accelerometer and Gyroscope}
+  \subsection{Characterising Drift and Bias in the Accelerometer}
 
-  \subsection{Localizing with IMU and Encoder on the Turtlebot}
+    \subsubsection{Measuring the drift and bias in the accelerometer}
 
-    % not sure this should actually be a section...
-    
-  \subsection{Evaluating our IMU localization method}
-  
+    % report the drifts and biases we saw in the circles test and in the
+    % talk about how there weren't any obvious trends in bias
+    % discuss the static tests you did where the rio was stationary, and report how much you say it drifting
+    % we can do the same for the nypro stuff, showing how drift effects velociton and position as you integrate/double integrate
+
+    \subsubsection{Drift Compensation}
+
+    % then, explain what we tried to do to compensate for drift, and why it didn't really fix it
+
+    \subsubsection{Zero Velocity Updates}
+    % talk about how zero velocity udpates improve double integration/position
+
+  \subsection{Comparing Our IMU Localization to the NavX API}
+
+    % FIXME: how good is GetWorldX? Show mocap + nypro circles results
+    % eventually also compare using with old/new mocap data
+
   \subsection{Measuring Beacon Delays}
 
     The beacon system relies on measuring the time it takes for a sound signal to travel from the beacons to the robot. To do this accurately, one must account for transmit and receive delays in addition to the actual time of flight. Figure \ref{fig:rx_tx_timing} illustrates the various delays we need to account for. We conducted experiments to estimate these delays. First, to get an estimate of the radio transmit and receive delay, a transmitter and receiver were set up on two microcontrollers. The transmitter sent \SI{5}{\milli\second} pulses at \SI{433}{\mega\hertz} (no encoded data) every \SI{55}{\milli\second}, and oscilloscope probes were attached to the input pin on the transmitter and the output pin on the receiver. By comparing the time difference between the input and output signals on the oscilloscope, we can determine the total time. Furthermore, we can measure the distance between the transmitter and receiver and subtract the theoretical time of flight from the total time. The full data for these measurements are available in \nameref{appendix:rf-rx-tx}, and an example measurement is shown in Figure \ref{fig:rf_delay_ex}. The time of flight of radio over distances of a new centimeters or meters is on the order of nanoseconds. We measured an average delay of \SI{45.175}{\micro\second}, which we attribute to the internal circuitry of the transmitter and receiver. The variance of this delay was \SI{16}{\micro\second}. However, we also measured delays as low as \SI{32}{\micro\second} and as high as \SI{79}{\micro\second}. Since the theoretical time of flight over the distances used in this experiment were at most \SI{1}{\nano\second}, we can conclude that there is both delay and significant variance in the delay of the transmitters and receivers. This is an important delay to consider when implementing the timing measurement of the beacon signals.
@@ -402,6 +415,10 @@
     \end{figure}
 
     % FIXME redo the results and change out the pictures above now that we have better results
+
+  \subsection{Localizing with IMU and Encoder on the Turtlebot}
+
+    % kacper stuff? mocap turtlebot?
 
   \subsection{Detecting Simulated Chirps in MATLAB}
 
@@ -574,10 +591,6 @@
 
 	\subsection{ArUco Misdetections}
 
-	
-
-    % FIXME: how good is GetWorldX? Show mocap + nypro circles results
-
 	\subsection{Latency over the Robot Network}
 
 		It is important that all of our sensor data be time stamped so we can account for latency in our state estimation. The data collected on the NavX is time stamped on the NavX, and the encoder data is stamped when it is read on the RoboRIO. This time stamped data is sent to the TK1 over UDP. UDP was chosen because it was the easiest method with satisfactory speed. To test this, we wrote a simple program that sends 96 bytes, an upper bound on the size of all our stamped sensor data, of UDP data between the RoboRIO and the TK1. We recorded the round trip time of these packets, which can be seen in Figure \ref{fig:udp_timing}. The round-trip latency was \SI{0.5}{\milli\second} on average, which is much faster than any of our sensors, and therefore is fast enough for us to transmit and process the data before new data arrives.
@@ -722,6 +735,10 @@
 			Given the five sensing technologies mentioned above, we will now provide details on the configuration and use of each sensor. The Navx IMU is connected to the RoboRIO, which is the main processor which are FRC teams are required to use. The encoders on the drive train are similarly connected to the digital IO pins on the RoboRIO. These sensors are connected to the RIO directly because they are often used by FRC Teams in their robot programs. We also introduce the NVIDIA Jetson TK1 as a co-processor. The camera is connected via USB-A to the TK1. Because of its superior computational power, the TK1 is responsible for processing all of the raw sensor data and delivering the result back to the main robot program. In this setup, the TK1 can receive sensor data from the RoboRIO over the robot network band from the USB webcam directly.
 
 			There are two software components of our system. First, there is a a C++ library cross-compile for the RoboRIO that FRC teams will use in their robot projects. Teams are expected to call two or three simple functions in their robot program, which gives us everything we need to log sensor data and send it to the TK1. Because of this minimal API, we require very few changes to robot programs in order to get localization. This will make it approachable for teams and encourage them to try localization. The second software component is a C++ program running on the TK1. This program reads the camera data, serves http camera streams, receives the sensor data from the RoboRIO, computes the position of the robot, and reports this position over network tables. Again, the TK1 was chosen for this task because of it's computing power.
+
+    \subsubsection{Accelerometer Processing}
+
+      % describe our final methods for what we're actually doing with the navx data
 
     \subsubsection{Encoder IMU Fusion}
 
