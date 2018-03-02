@@ -42,7 +42,7 @@
   Knowing the position and orientation of a mobile robot is critical to many tasks. For robots designed for high-speed gameplay, knowing the position and orientation allows the robot to perform complex autonomous behaviors such as shooting and retrieving game objects. In this report, we describe a system for determining the pose $(x, y, \theta)$ of a mobile robot in a cluttered environment. We are using the use case of FIRST Robotics Competitions (FRC) as the environment for testing the platform. The localization platform is being designed as an all purpose localization platform with focus on the FRC environment due to the interesting challenges FRC provides. FRC is a challenging environment because the robots make rapid and aggressive maneuvers by human drivers for part of the time, and at other times are under complete autonomy. Another challenge is that FRC fields are cluttered with other robots and game pieces such as soccer balls, pool noddles, or inflatable shapes, and these objects change from year to year. A successful localization system for FRC must support up to six robots, as well as occlusion from the playing field elements, unpredictable lighting, and frequent impacts. Our research suggests that there are at least five appropriate methods for localization: cameras and tags, radio and ultrasonic beacons, optical flow, dead reckoning with encoders, and dead reckoning with an IMU. All of these methods have seen success in robot localization.
 
 	At the highest level, our project is to allow FRC robots to query their position on the field. This information is a prerequisite for interesting behaviors such as path following, picking up game pieces, navigating to feeder stations, and detecting slips and collisions. These behaviors are currently beyond the reach of most teams, so we hope that by providing a system for localization, teams can extend our work to these complex behaviors. An important criteria for our system is that it work well not only on the FRC field, but in teams practice spaces. If teams are not confident that their system will perform in competition the same way it performs in their practice spaces, they will not use. The risk is simply too great. This is a challenge that most previous localization systems do not consider. Even though FRC teams do not have a full field to test on, they still need a way to test specific behaviors that are specific to the field. Presently, teams will construct mock-ups of small parts of the field and various game elements to test with. For example, if the game requires shooting basketballs into a hoop, most teams will build or purchase a basketball hoop that is similar to the one used on the field and mount it somewhere in their shop. The important point is that the hoop will likely be mounted in a slightly different position or orientation. Ideally, using our system teams would be able to use their mock setup as if it were the real field. In other words, teams could test a program that autonomously shoots balls into the hoop in their shop and later use the same code with confidence in the competition. Teams must be able to specify the location of their mock field elements so that our localization system can report position that is relative to this hallucinated version of the field.
-	This report begins with a review of existing literature on indoor localization for mobile robots in the \nameref{related_work} section. The strengths and weaknesses of these existing methods are described in the \nameref{methods} section. The \nameref{experiments} section contains information on experiments we conducted. The \nameref{specs} section provides a complete description of our design criteria and system specifications. The \nameref{conclusion} section details our plan moving forward.
+	This report begins with a review of existing literature on indoor localization for mobile robots in the \nameref{related_work} section. The strengths and weaknesses of these existing methods are described in the \nameref{methods} section. The \nameref{experiments} section contains information on experiments we conducted. The \nameref{section:specs} section provides a complete description of our design criteria and system specifications. The \nameref{conclusion} section details our plan moving forward.
 
 \tableofcontents
 
@@ -175,7 +175,7 @@
 
   Among the vision based localization systems discussed in the Literature review, there are systems that use natural landmarks (object detection) and those that use artificial landmarks (tags). Tag based systems are preferred because they are inexpensive and easy to implement. Natural landmark detection would not perform well because the field of FRC changes over time and the robots are moving around the field during the competition. Furthermore, implementing real time object recognition is computationally intensive. Among systems using artificial landmarks, not a lot of robot localization systems use 1D barcodes as references. A 1D barcode can only contains up to 25 characters, which limits the length of information. Among 2D barcodes, fiducial tags and QR tags are two of most popular choices in mobile robot localization. The advantages and disadvantages of different types (QR, Data matrix, PDF417, fiducial tag) of 2D barcodes are discussed here. QR codes are designed to align with the camera. It contains 268 pixels without payloads. Data Matrix codes are very similar to QR codes, and they have high fault tolerance and fast readability. Data Matrix can be recognized with up to 60\% of the code unrecognizable. PDF417 is famous for a storage of huge amount of data. Complex information such as photographs, signatures can be inserted into PDF417 easily. Fiducial tags contain less information than QR codes. However, many of them can easily be detected in one shot and the process speed for fiducial tags is faster than of QR codes. One of the most commonly used 2D barcode in robotics is fiducial tag. A system in \cite{wang_apriltag_2016} measured the distance between AprilTags and the camera. A sheet of \SI{16.7}{\centi\meter} AprilTags were tested from \SI {0.5}{\meter} to \SI{7}{\meter} away. The calculated distance was almost the same as the real distance from \SI{0.5}{\meter} to \SI{6.5}{\meter}. The position errors were within \SI{0.1}{\meter} from range 0 to \SI{10}{\meter}. However, orientation errors were pretty high (\ang{1.5} off) when the off - axis angle was small, but were within 1 degree from \ang{20} to \ang{75} of off - axis angle. The detected rates for tags were 100\% from 0 to \SI{17}{\meter} away. This system showed that the combination of camera and fiducial tags can potentially localize robots accurately and precisely. The research, \cite{chen_two-stage_2013} developed an algorithm to enhance the quality of QR codes captured in order to improve the recognition rate. Its algorithm successfully recognized 96\% of QR codes under a variety of qualities captured by a mobile phone camera. The average time for decoding a QR code is \SI{593}{\milli\second}. Another deblurring method in \cite{xu_2d_2011} can be applied to enhance the quality of motion-blurred ArUco code.
   Another benefit of cameras with tags is that they provide global position information without much setup or infrastructure. However, camera based systems suffer from occlusion and jitter. They are also generally computationally intensive. These disadvantages can be mitigated with our other localization techniques. In summary, tag based camera systems have been shown to be very accurate and we will incorporate them into our system.
-  Published by the developers of the AruCo tag detection and pose estimation algorithm, Marker Mapper is localization technique for indoor robots. Motion capture data suggests that it is comparable to sophisticated localization algorithms such as ORB-SLAM and LSD-SLAM\cite{munoz-salinas_rafael_mapping_2016}.
+  Published by the developers of the ArUco tag detection and pose estimation algorithm, Marker Mapper is localization technique for indoor robots. Motion capture data suggests that it is comparable to sophisticated localization algorithms such as ORB-SLAM and LSD-SLAM\cite{munoz-salinas_rafael_mapping_2016}.
   \begin{figure}[H]
   	\centering
     \includegraphics[width=1\linewidth]{./images/mm_errors.png}
@@ -194,7 +194,7 @@
 
 \section{Experimental Results} \label{experiments}
 
-  One of the key contributions of this MQP is an extensive set of emperical and theoretical results spanning many different localization techniques. This sections describes each of these experiments and explains how each test impacts the practical implementation of a complete localization system.
+  One of the key contributions of this MQP is an extensive set of empirical and theoretical results spanning many different localization techniques. This sections describes each of these experiments and explains how each test impacts the practical implementation of a complete localization system.
 
   \subsection{IMU Calibration} \label{section:imu_calibration}
 
@@ -375,10 +375,11 @@
       \label{table:optical_flow_benchmark}
     \end{table}
 
-    We performed these measurements 5 times to check for repeatability. From these numbers, we conclude the laptop was just over twice as fast that of the RoboRIO. However, the 12 FPS rate is still fast enough for our project requirements (see Section \ref{design_criteria})
+    We performed these measurements 5 times to check for repeatability. From these numbers, we conclude the laptop was just over twice as fast that of the RoboRIO. However, the 12 FPS rate is still fast enough for our project requirements (see Section \ref{section:design_criteria})
 
   \subsection{Detecting ArUco Tags at a Distance}
-     % TODO: run this test. put up tag flat on wall and find out how far away we can see tags at various resolutions
+
+     % TODO: run this test. Put up tag flat on wall and find out how far away we can see tags at various resolutions
 
   \subsection{Collecting Ground-Truth with VICON Motion Capture}
 
@@ -393,7 +394,7 @@
         \label{fig:viconSetup}%
     \end{figure}
 
-    In our experiments, the camera system captures data at 100Hz. To synchronize data collection, the RoboRIO sends a 5V signal to the Lock+ processor, and a UDP packet is transmitted to the Co-Processor running the camera. This data is synchronous to within $\approx$\SI{500}{\micro\second}. Using the same markers, the pose of the AruCo tags is also measured.
+    In our experiments, the camera system captures data at 100Hz. To synchronize data collection, the RoboRIO sends a 5V signal to the Lock+ processor, and a UDP packet is transmitted to the Co-Processor running the camera. This data is synchronous to within $\approx$\SI{500}{\micro\second}. Using the same markers, the pose of the ArUco tags is also measured.
 
     \begin{figure}[H]%
       \centering
@@ -464,11 +465,13 @@
 
 	\subsection{Co-Processors for Image Processing}
 
-    Since our system requires processing of images from a video stream, we evaluated the Raspberry Pi 3 and the NVidia TK1 as potential co-processors. We ruled out the RoboRIO for image processing because many teams in FRC have found the RoboRIO insufficient for vision processing, and because we did not intend for computational efficiency to be a key criteria of this project. Further still, using a coprocessor allows us to write and run whatever our system requires, irrespective of how any teams actual robot code is operating. % FIXME: More testing here. How high FPS/resolution can we get on each platform?
+    Since our system requires processing of images from a video stream, we evaluated the Raspberry Pi 3 and the NVidia TK1 as potential co-processors. We ruled out the RoboRIO for image processing because many teams in FRC have found the RoboRIO insufficient for vision processing, and because we did not intend for computational efficiency to be a key criteria of this project. Further still, using a coprocessor allows us to write and run whatever our system requires, irrespective of how any teams actual robot code is operating.
+
+    % FIXME: More testing here. How high FPS/resolution can we get on each platform?
 
   \subsection{Evaluting The Placement of ArUco Tags} \label{section:tag_placement}
 
-    When doing localization with ArUco markers, generally the more markers that can be detected the better your pose estimates and maps will be. However, this is also a trade off with the amount of modificaiton required in the environment. We would like to have as few tags as possible in our environment to minimize the amount of work required to localize in that environment. To begin to answer this question, we consider how the spacing between tags on a mock FRC field effects the detection rate of tags.
+    When doing localization with ArUco markers, generally the more markers that can be detected the better your pose estimates and maps will be. However, this is also a trade off with the amount of modification required in the environment. We would like to have as few tags as possible in our environment to minimize the amount of work required to localize in that environment. To begin to answer this question, we consider how the spacing between tags on a mock FRC field effects the detection rate of tags.
 
     \begin{figure}[H]
       \centering
@@ -477,7 +480,7 @@
       \label{fig:nypro_tag_spacing}
     \end{figure}
 
-    We placed \SI{0.152}{\meter} tags every 1.5ft on a mock FRC field at Nypro (see Figure \ref{fig:nypro_tag_spacing}). We recorded video driving realistically around the field and counted how frequently we detected ArUco tags. We then filtered out tags by their ID numbers to simulate spacings of 3ft, 4.5ft, and 6ft. We report detection statistics for each of these spacings based on two different runs through the field in Table \ref{table:spacing_timing}. We also plot all the times between detections over the course of one of our runs in Figure \ref{fig:spacing_timing}. Our results show that, assuming reasonable camera settings of 480p30 (640x480, 30fps), the frequency of dat detection is essentially unchanged between 1.5ft and 6ft spacings. The only notable difference is the mean time between detections slowly rises as tags become further apart. Intuitively, this means that even 6ft between tags is close enough to expect to detect tags 10 times a second. More specifically, we can say that 95\% of the time we will detect a tag every \SI{0.1}{\second}. We do note that during our first trial, where our camera was accidentally only recording frames at 480p8 (yes, that's 8fps), the tag detection rate suffers more significantly as tag detection increases.
+    We placed \SI{0.152}{\meter} tags every 1.5ft on a mock FRC field at Nypro (see Figure \ref{fig:nypro_tag_spacing}). We recorded video driving realistically around the field and counted how frequently we detected ArUco tags. We then filtered out tags by their ID numbers to simulate spacings of 3ft, 4.5ft, and 6ft. We report detection statistics for each of these spacings based on two different runs through the field in Table \ref{table:spacing_timing}. We also plot all the times between detections over the course of one of our runs in Figure \ref{fig:spacing_timing}. Our results show that, assuming reasonable camera settings of 480p30 (640x480, 30fps), the frequency of tag detection is essentially unchanged between 1.5ft and 6ft spacings. The only notable difference is the mean time between detections slowly rises as tags become further apart. Intuitively, this means that even 6ft between tags is close enough to expect to detect tags 10 times a second. More specifically, we can say that 95\% of the time we will detect a tag every \SI{0.1}{\second}. We do note that during our first trial, where our camera was accidentally only recording frames at 480p8, the tag detection rate suffers more significantly as tag detection increases.
 
     \begin{table}[H]
       \centering
@@ -503,7 +506,7 @@
     \end{figure}
 
 
-    It is important to note several other factors that are not explored here, including how spacing and positioning effects the accuracy of detections. Furthermore, one should ask whether the specific locations of tags, not just the spacing between them, also effects detection accuracy and frequency. Intuitively, we claim that tags should be placed in locations where the robots camera is likely to be facing, such as feeding stations and goals. However, we do not emperically evaluate this claim.
+    It is important to note several other factors that are not explored here, including how spacing and positioning effects the accuracy of detections. Furthermore, one should ask whether the specific locations of tags, not just the spacing between them, also effects detection accuracy and frequency. Intuitively, we claim that tags should be placed in locations where the robots camera is likely to be facing, such as feeding stations and goals. However, we do not empirically evaluate this claim.
 
 	\subsection{Statistics of CSCore Image Timestamps}
 
@@ -549,7 +552,7 @@
 
     We explore the effect of frame rate and resolution on the frequency with which tags are detected. This frequency of detected tags is an important metric because it sets the standard for how long our dead-reckoning methods must run without receiving an update to compensate for drift. Furthermore, since the FPS and resolution of a camera correlates with cost, we want to know whether a cheap camera is sufficient for tag detection.
 
-      To answer this question, we used three cameras simultaneously recording footage from the robot as we drove around a mock FRC Field. The tags were placed roughly every 6 feet (according to results of section \ref{section:tag_placement}) and the robot was driven through a simulated FRC game for \SI{60}{\second}. We then compare how frequently tags were detected by looking at gaps between detections. Table \ref{table:tag_detection_comparison} shows a comparison of various key metrics between the different resolution/FPS pairings. The full plots showing all gaps in the run is shown in appendix \ref{appendix:tag_detection}
+    To answer this question, we used three cameras simultaneously recording footage from the robot as we drove around a mock FRC Field. It is important that these cameras are recording simultaneously and are mounted right next to each other, because it means the camera streams will see essentially the same view of the world, with the only variable being the resolution and FPS. The tags were placed roughly every 6 feet (according to results of section \ref{section:tag_placement}) and the robot was driven through a simulated FRC game for \SI{60}{\second}. We then compare how frequently tags were detected by looking at gaps between detections. Table \ref{table:tag_detection_comparison} shows a comparison of various key metrics between the different resolution/FPS pairings. The full plots showing all gaps in the run is shown in appendix \ref{appendix:tag_detection}
 
     \begin{table}[H]
       \begin{tabular}{|c|c|c|c|c|c|} \hline
@@ -562,22 +565,68 @@
       \label{table:tag_detection_comparison}
     \end{table}
 
-    Arguably the most important metric here is the 9th percetile metric, which says that 95\% of of the time gaps between detected tags are less than that number. Generally, that number is quite close to the mean frame rate which means that usually you get one tag detected in every frame, but this is of course not always true. It's important to note that just because a there was a tag detected in the frame doesn't mean we get a reliable position estimate from that tag. So these numbers are not the same as the how frequently an actual position is received, which is what we truly care about.
+    Arguably the most important metric here is the 9th percentile metric, which says that 95\% of of the time gaps between detected tags are less than that number. Generally, that number is quite close to the mean frame rate which means that usually you get one tag detected in every frame, but this is of course not always true. It's important to note that just because a there was a tag detected in the frame doesn't mean we get a reliable position estimate from that tag. So these numbers are not the same as the how frequently an actual position is received, which is what we truly care about.
 
-    If we now consider only valid position estimates, and not just any detected tag, ... % FIXME: add kacper's analysis which is subtly different
+    In conclusion, the 480p60 setting performs the best by all metrics, and therefore we recommend using those settings.
+
+  \subsection{Rate of position estimates from ArUco Tags}
+
+    Although the detection of tags, is important, what is really important is the estimates of their pose. We now consider only valid position estimates, and not just any detected tag, and measure the frequency of pose estimates from our camera. We use the same recordings at the Nypro test field as we have used throughout this report, and similar to section \ref{section:tag_placement} we compare the time between valid pose estimates. For completeness, we also compare this across the three resolution/fps settings which were recorded. One notable oddity in the data is the extremely high variance in the worst-case time between pose detections across trials and tag spacings. We simulated tag-spacings by filtering out tags based on their IDs, which is accurate because tags were placed in order. However, it means that it's possible for a tag that is present in more sparsely spaced group (ex: 6ft) to be missing from densely spaced group (4.5ft). We can explain this high variance by saying that there was a tag included in the 6ft spacing test that was not present in the 4.5ft spacing test, and without that tag there is a longer period in which no tags are seen. Secondly, we can also say that the high variance between the two trials is explained by the different paths the robot took in each trial. This is a very important result, because it means that depending on how a robot moves through the field, the frequency of valid pose estimates will change.
+
+    \begin{table}[H]
+      \centering
+      \begin{tabular}{|c|c|c|c|c|c|c|c|c|} \hline
+        spacing (ft) & \multicolumn{2}{c}{worst case (s)} & \multicolumn{2}{c}{95th percentile (s)} & \multicolumn{2}{c}{mean (s)} & \multicolumn{2}{c|}{median (s)} \\ \hline
+            & trial 1 & trial 2 & trial 1 & trial 2 & trial 1 & trial 2 & trial 1 & trial 2 \\ \hline
+            1.5ft & 2.7960 & 3.1961 & 0.2420 & 0.7736 & 0.1135 & 0.1623 & 0.0680 & 0.0680 \\ \hline
+            3ft   & 3.5960 & 4.0040 & 0.9228 & 0.9680 & 0.1804 & 0.1958 & 0.0680 & 0.0680 \\ \hline
+            4.5ft & 6.5961 & 6.4640 & 1.0160 & 1.2224 & 0.2316 & 0.2556 & 0.0680 & 0.0680 \\ \hline
+            6ft   & 10.7960 & 4.7259 & 0.8038 & 1.1300 & 0.2703 & 0.2625 & 0.0680 & 0.0680 \\ \hline
+      \end{tabular}
+      \caption{Statistics of Pose Estimates from two trials of 1080p15 footage, across various tag spacings. Note the high variance in worst-case across.}
+      \label{table:480p30_pose_estimate_stats}
+    \end{table}
+
+    \begin{table}[H]
+      \centering
+      \begin{tabular}{|c|c|c|c|c|c|c|c|c|} \hline
+        spacing (ft) & \multicolumn{2}{c}{worst case (s)} & \multicolumn{2}{c}{95th percentile (s)} & \multicolumn{2}{c}{mean (s)} & \multicolumn{2}{c|}{median (s)} \\ \hline
+            & trial 1 & trial 2 & trial 1 & trial 2 & trial 1 & trial 2 & trial 1 & trial 2 \\ \hline
+        1.5ft & 1.5161 & 3.0489 & 0.0334 & 0.0334 & 0.0295 & 0.0324 & 0.0167 & 0.0167 \\ \hline
+        3ft   & 1.5161 & 5.8312 & 0.0500 & 0.0334 & 0.0437 & 0.0448 & 0.0167 & 0.0167 \\ \hline
+        4.5ft & 2.9823 & 7.2807 & 0.0333 & 0.0333 & 0.0479 & 0.0553 & 0.0167 & 0.0167 \\ \hline
+        6ft   & 2.2492 & 6.9642 & 0.0334 & 0.0334 & 0.0445 & 0.0533 & 0.0167 & 0.0167 \\ \hline
+      \end{tabular}
+      \caption{Statistics of Pose Estimates from two trials of 480p60 footage, across various tag spacings.}
+      \label{table:480p30_pose_estimate_stats}
+    \end{table}
+
+    \begin{table}[H]
+      \centering
+      \begin{tabular}{|c|c|c|c|c|c|c|c|c|} \hline
+        spacing (ft) & \multicolumn{2}{c}{worst case (s)} & \multicolumn{2}{c}{95th percentile (s)} & \multicolumn{2}{c}{mean (s)} & \multicolumn{2}{c|}{median (s)} \\ \hline
+            & trial 1 & trial 2 & trial 1 & trial 2 & trial 1 & trial 2 & trial 1 & trial 2 \\ \hline
+        1.5ft & 3.6987 & 4.5651 & 0.0666 & 0.1000 & 0.0517 & 0.0621 & 0.0333 & 0.0333 \\ \hline
+        3ft   & 4.8316 & 5.8313 & 0.0667 & 0.1999 & 0.0711 & 0.0899 & 0.0333 & 0.0333 \\ \hline
+        4.5ft & 8.1971 & 7.1642 & 0.0766 & 0.1500 & 0.1206 & 0.1104 & 0.0333 & 0.0333 \\ \hline
+        6ft   & 10.4296 & 6.8976 & 0.1483 & 0.1517 & 0.1164 & 0.0959 & 0.0333 & 0.0333 \\ \hline
+      \end{tabular}
+      \caption{Statistics of Pose Estimates from two trials of 480p30 footage, across various tag spacings.}
+      \label{table:480p30_pose_estimate_stats}
+    \end{table}
+
+    If we consider the 59th percentile metric as our most important metric, we should ask what spacing and resolution/fps settings give acceptably fast update rates. If we desire updates at least every \SI{0.1}{\second} (see section \ref{section:design_criteria} for justification), then we say that 480p60 will be sufficient at any of the tested tag spacings. On the other hand, 1080p15 gives update too infrequently no matter how close tags are spaced. This makes sense, because at 15fps, a tag would need a valid pose estimate in essentially every frame to acheive \SI{0.1}{\second} update rate. Lastly, we can say that 480p30 probably would work with 1.5ft and 3ft spacings, and it becomes slightly too slow at 4.5ft and 6ft spacings. Ultimately, we recommend using 480p60, and suggest a 6ft spacing so as to minimize the modification of the environment.
 
     % also compare position estimates between each of the cameras
     % compare graphically over time
     % compare individual points in frames
     % compare covariance after Kalman filtering
 
-	\subsection{Rate of position estimates from ArUco Tags}
-
 	\subsection{Benchmarking MarkerMapper with VICON Motion Capture}
 
-	\subsection{On Building MarkerMaps?}
+	\subsection{On Building MarkerMaps}
 
-	\subsection{ArUco Misdetections}
+	\subsection{Erroneous detections with ArUco}
 
     Throughout our experiments with ArUco tags, we accumulated several examples of detections that were erroneous in some form or another. First, we present examples of tags whose ID is misdetected (Figure \ref{fig:misdetected_tags}). In all these cases the incorrectly detected ID was 2, but there is no evidence that this is an issue just with tag 2 specifically.
 
@@ -591,7 +640,7 @@
       \label{fig:misdetected_tags}
     \end{figure}
 
-    We also report how a poor camera calibration file and cause inaccuracies in the estimated poses of tags. In Figure \ref{fig:bad_tag_pose}, the tag's ID is identified correctly, but it's pose is horrible misdetected.
+    We also report how a poor camera calibration file and cause inaccuracies in the estimated poses of tags. In Figure \ref{fig:bad_tag_pose}, the tag's ID is identified correctly, but it's orientation is incorrect.
 
     \begin{figure}[H]
       \centering
@@ -613,9 +662,9 @@
 
 		Another important problem is time synchronization. The time stamps on all the data must be in reference to some common time source. To achieve this effect, we use Christian's Algorithm \cite{cristian_probabilistic_1989}. Specifically, we send a packet stamped with the current time on the RoboRIO to the TK1, the TK1 adds its own time stamp and responses, the and RoboRIO then add half the round trip time to the time sent by the TK1. This allows the sensor data sent from the RoboRIO to be synchronized with the clock on the TK1.
 
-\section{System Specification} \label{specs}
+\section{System Specification} \label{section:specs}
 
-  \subsection{Design Criteria} \label{design_criteria}
+  \subsection{Design Criteria} \label{section:design_criteria}
 
     Here we present our goals and the criteria our system must meet in order to be successful. Broadly, we consider the following factors to be those which are important to the success of our system.
     \begin{enumerate}
@@ -642,7 +691,7 @@
 
 	\subsubsection{ArUco SLAM}
 
-    To detect the pose of a robot with respect to an absolute origin, a AruCo-based SLAM algorithm was developed. The AruCo library provides a function for estimating the pose of an object by minimizing the squared sums of the distances between the projected points and the measured points (reprojection error). The side length of each tag is known and input into the program. The measured points (two corners, minimally) are used to obtain a point estimate in 3D space. Multiple point estimates from each corner are used to calculate the pose of the AruCo tag's centroid. The projected points are described by the camera matrix, which is a model for a pinhole camera discussed above. The reprojection error corrects the pose estimate based on the calibrated values.
+    To detect the pose of a robot with respect to an absolute origin, a ArUco-based SLAM algorithm was developed. The ArUco library provides a function for estimating the pose of an object by minimizing the squared sums of the distances between the projected points and the measured points (reprojection error). The side length of each tag is known and input into the program. The measured points (two corners, minimally) are used to obtain a point estimate in 3D space. Multiple point estimates from each corner are used to calculate the pose of the ArUco tag's centroid. The projected points are described by the camera matrix, which is a model for a pinhole camera discussed above. The reprojection error corrects the pose estimate based on the calibrated values.
 
     \begin{figure}[H]
       \centering
