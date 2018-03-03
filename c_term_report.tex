@@ -287,7 +287,9 @@
 
     % FIXME: how good is GetWorldX? Show mocap + nypro circles results
     % eventually also compare using with old/new mocap data
-
+% * <jhu4@wpi.edu> 2018-03-03T22:20:59.116Z:
+%
+% ^.
   \subsection{Measuring Beacon Delays}
 
     The beacon system relies on measuring the time it takes for a sound signal to travel from the beacons to the robot. To do this accurately, one must account for transmit and receive delays in addition to the actual time of flight. Figure \ref{fig:rx_tx_timing} illustrates the various delays we need to account for. We conducted experiments to estimate these delays. First, to get an estimate of the radio transmit and receive delay, a transmitter and receiver were set up on two microcontrollers. The transmitter sent \SI{5}{\milli\second} pulses at \SI{433}{\mega\hertz} (no encoded data) every \SI{55}{\milli\second}, and oscilloscope probes were attached to the input pin on the transmitter and the output pin on the receiver. By comparing the time difference between the input and output signals on the oscilloscope, we can determine the total time. Furthermore, we can measure the distance between the transmitter and receiver and subtract the theoretical time of flight from the total time. The full data for these measurements are available in \nameref{appendix:rf-rx-tx}, and an example measurement is shown in Figure \ref{fig:rf_delay_ex}. The time of flight of radio over distances of a new centimeters or meters is on the order of nanoseconds. We measured an average delay of \SI{45.175}{\micro\second}, which we attribute to the internal circuitry of the transmitter and receiver. The variance of this delay was \SI{16}{\micro\second}. However, we also measured delays as low as \SI{32}{\micro\second} and as high as \SI{79}{\micro\second}. Since the theoretical time of flight over the distances used in this experiment were at most \SI{1}{\nano\second}, we can conclude that there is both delay and significant variance in the delay of the transmitters and receivers. This is an important delay to consider when implementing the timing measurement of the beacon signals.
