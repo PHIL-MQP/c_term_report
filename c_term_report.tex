@@ -555,6 +555,7 @@
     To answer this question, we used three cameras simultaneously recording footage from the robot as we drove around a mock FRC Field. It is important that these cameras are recording simultaneously and are mounted right next to each other, because it means the camera streams will see essentially the same view of the world, with the only variable being the resolution and FPS. The tags were placed roughly every 6 feet (according to results of section \ref{section:tag_placement}) and the robot was driven through a simulated FRC game for \SI{60}{\second}. We then compare how frequently tags were detected by looking at gaps between detections. Table \ref{table:tag_detection_comparison} shows a comparison of various key metrics between the different resolution/FPS pairings. The full plots showing all gaps in the run is shown in appendix \ref{appendix:tag_detection}
 
     \begin{table}[H]
+      \centering
       \begin{tabular}{|c|c|c|c|c|c|} \hline
         Condition & Worst-Case & 95th percentile & Mean & Median & Mode \\ \hline
         PS4 Eye 480p30 & 4.565 & 0.100 & 0.062 & 0.033 & 0.033 \\ \hline
