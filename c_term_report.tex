@@ -149,13 +149,20 @@
 
     Lucas Kanade looks at pixels which have a large gradient in intensity of color. It changes images to be gray scaled in order to see changes in darkness instead of colors. Lucas Kanade method works the best when it uses pixels that have three qualities. The first is that the pixels in a small area have the same brightness. Even though the location of the pixel has changed the brightness is consistent, so using a pixel from that area to track is optimal. They also should be temporally similar meaning the path the pixel takes should change gradually. Pixels should also be spatially similar, meaning that neighboring pixels should have similar motion to each other. Picking pixels that fit these requirements work best with Lucas Kanade \cite{sun_optical_2008}.
 
-    Optical flow has been used for localization in indoor, feature-rich environments \cite{gao_qingji_onboard_2015}. Using a PX4FLOW optical flow sensor, 64x64 pixel images were captured at 100 FPS, and an ultrasonic range sensor measured distance from the ground. Using
+    Optical flow has been used for multi-sensor localization in indoor, feature-rich environments \cite{gao_qingji_onboard_2015}. Using a PX4FLOW optical flow sensor, 64x64 pixel images were captured at 100 FPS, and an ultrasonic range sensor measured distance from the ground. The data from the camera was used to obtain a velocity information using optical flow and a position estimate using landmark detection on the images. These were fused with attitude data from an onboard IMU. In this research, miniature quad-copters flying over a textured carpet are used to evaluate the localization algorithm. The patterns on the 20x20m carpet, comprising dots of random size and a 1 square grid, are used as features for the optical flow and camera-based position estimates. The algorithm developed is benchmarked against results from an open-source optical flow position estimate provided with the sensor's API \cite{dominik_honegger_open_2013} and are compared qualitatively using the below plot.
+    
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{./images/static_detector.png}
+    \caption{This should be a plot of optical flow data compared to the algorithm developed by Qingji et al.}
+    \label{fig:gao_qingji_onboard_2015_results}
+  \end{figure}
 
   \subsection{Filtering and Calibration} \label{filtering}
 
   Given the number of sources of position information, it is natural that there will also be a number of ways to take advantage of using multiple techniques together. Different sensors can have better or worse performance in different scenarios, and a choice of fusion algorithm will yield more accurate position information by leveraging this. Calibration can also be used to compensate for errors between sensors. For instance, if your have encoders to determine that you are not moving, you can calibrate your IMU knowing this fact. The class of filtering algorithms we explore is called Bayesian filters. These filters describe the world and sensors with probability models, and they estimate both the state of the robot and the confidence of that state estimate. Bayesian filtering algorithms include Kalman filters, information filters, and particle filters. Kalman filters and information filters have the advantage in computational efficiency, where as particle filters can more be more accurate if the true belief distribution is non-gaussian or if the true dynamics are nonlinear \cite{thrun_probabilistic_2005}. In our work, it is natural to consider the state as the position, velocity, and acceleration of the robot. We claim that this state representation satisfies the Markov condition needed by Bayesian filters, which is that our current state is sufficient to make future predictions. To implement these filters, we required a model for now our state changes given our current state and motor inputs. For each measurement source, we define how the sensor values are derived from the state. It is easy to come up with very rough approximations for these equations, but difficult to construct accurate ones. On the other hand, these filters have very strong gaurantees and their efficacy has been demonstrated in numerous systems \cite{chui_kalman_1991}\cite{digiampaolo_mobile_2014}\cite{mirzaei_kalman_2008}\cite{nasa_kalman_1999}\cite{saab_standalone_2011}.
 
-  Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characterstics of the camera \cite{noauthor_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
+  Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characteristics of the camera \cite{noauthor_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
 
 \section{Trade-Off Analysis} \label{methods}
 
@@ -229,7 +236,7 @@
       \label{table:imu_calibration_values}
     \end{table}
 
-    Note the values shown above are close to the values that represent no transormation, $[0, 0, 0, 1, 1, 1, 0, 0, 0]$. This indicates that our accelerometer is already quite well calibrated but not quite perfect, which is expected.
+    Note the values shown above are close to the values that represent no transformation, $[0, 0, 0, 1, 1, 1, 0, 0, 0]$. This indicates that our accelerometer is already quite well calibrated but not quite perfect, which is expected.
 
     The next step is to calibrate the gyroscope. We integrate the angular rates measured by the gyro between every sequential pair of static intervals and compare this to the angle between the two static intervals. We have a good estimate of the true orientation of each static interval from the previous accelerometer calibration step, and so the goal is to solve for gyroscope calibration parameters that make the integral of the transformed gyroscope data over the dynamic interval match the next orientation of the static interval as measured from the calibrated accelerometer readings. This is expressed in the error function we are minimizing, shown in Equation \ref{eq:gyro_calibration_error}.
 
@@ -626,9 +633,13 @@
 	\subsection{Benchmarking MarkerMapper with VICON Motion Capture}
 
 	\subsection{On Building MarkerMaps}
+    
+     
 
 	\subsection{Erroneous detections with ArUco}
-
+    
+    Marker Maps must comprise fiducial markers from known "dictionaries" or binary encodings. Examples of a several dictionaries are shown below. Dictionary selection is important because it allows users to optimize their Marker Maps. Users can choose dictionaries with different numbers of tags, marker (square) sizes, and inter-marker distances. Inter-marker distances are determined by the number of tags in the dictionary (high distances correspond to low numbers of tags). High inter-marker distances make detection more robust. Tags are defined by a list of bytes which determine the color of squares. Dictionaries can be further optimized by setting the "maxCorrectionBits" parameter experimentally to reduce false positives\cite{open_source_computer_vision_detection_2015}. 
+    
     Throughout our experiments with ArUco tags, we accumulated several examples of detections that were erroneous in some form or another. First, we present examples of tags whose ID is misdetected (Figure \ref{fig:misdetected_tags}). In all these cases the incorrectly detected ID was 2, but there is no evidence that this is an issue just with tag 2 specifically.
 
     \begin{figure}[H]
