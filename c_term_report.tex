@@ -276,27 +276,131 @@
 
   \subsection{Characterising Drift and Bias in the Accelerometer}
 
+    In this section, we demonstrate that naive double integration is inaccurate, but that with calibration, base frame rotation, and zero velocity updates we can acheive accurate position information from the NavX IMU.
+
     \subsubsection{Measuring the drift and bias in the accelerometer}
 
-    % report the drifts and biases we saw in the circles test and in the
-    % talk about how there weren't any obvious trends in bias
-    % discuss the static tests you did where the rio was stationary, and report how much you say it drifting
-    % we can do the same for the nypro stuff, showing how drift effects velociton and position as you integrate/double integrate
+      % report the drifts and biases we saw in the circles test and in the
+      % talk about how there weren't any obvious trends in bias
+      % discuss the static tests you did where the rio was stationary, and report how much you say it drifting
+      % we can do the same for the nypro stuff, showing how drift effects velociton and position as you integrate/double integrate
+      Compensating for the accelerometer drift is important in IMU localization since double integration of accelerometer data amplifies any inaccuracies. We first performed an experiment to study the drift of accelerometer when it is stationary. We put the accelerometer on a flat surface for 6 minutes and collected the data at \SI{100}{\hertz} (see Figure \ref{fig:static_test}). Then, we calculated the average accelerometer value of the first 500 samples and the last 500 samples in the x and y axes. The difference of mean values of first 500 samples and last 500 sample in x, y, z axes are -0.000475g, 0.000158g, 0.000323g respectively. For reference, we note that the maximum drift of -0.00475g, or \SI{-0.00465}{\meter\per\second\squared} would cause a position error of $0.5*-0.00465*3^2=$\SI{-0.020948}{\meter} over a 3 second period. In other words, if the NavX is stationary, even if the initial bias of the accelerometer is zero, the position could drift up to \SI{2}{\centi\meter} over 3 seconds.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/static_test.png}
+        \caption{The raw measured X acceleration (Gs) and its mean over first and last 500 sample periods while stationary.}
+        \label{fig:static_test}
+      \end{figure}
+
+      We then wondered that whether the duration of motion influences the amount of drift, so we performed an another experiment. We drove the robot in a circle, stop for 9 seconds,  drove the robot in 2 circles, stop for 9 second, so on, until the robot drove for 5 circles. We then collected accelerometer data, yaw angle, and temperature. We studied the drifting behavior and biases by observing the mean accelerometer value in several static intervals. Those values are shown in Figure \ref{fig:static_means}.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/static_means.png}
+        \caption{The means of the accelerometer data in world-frame X and Y in each static interval.}
+        \label{fig:static_means}
+      \end{figure}
+
+      The NavX accelerometer drifted a lot among several static intervals. It seemed like motions affect drift a lot. However, the drifted setting values didn't seem to have a trend over motioness.
+
+      Since temperature could also be a factor to affect accelerometer values, we compared the temperature with accelerometer values in static intervals over time.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/temperature.png}
+        \caption{A Plot of temperature recorded by the NavX over the duration of our test}
+        \label{fig:temperature}
+      \end{figure}
+
+      Shown in Figure \ref{fig:temperature}, we have seen that the temperature overall decreased over time. However, the biases in static intervals over time didn't show a specific trend. Temperature seemed to not have a straightforward relationship with accelerometer drift.
+
+      Overall, we figured out that the accelerometer drifted way much in motion than being stationary.Moreover, it drifted randomly and did not have a trend. Also, temperature seemed not having an obvious association with drift trend.
 
     \subsubsection{Drift Compensation}
 
     % then, explain what we tried to do to compensate for drift, and why it didn't really fix it
+    We integrated the calibrated accelerometer data with yaw angles of the circle test (refer back to section 5.3.1) to visualize velocity and displacement of our robot. We can easily see in figure xxx and yyy that drift affect the accuracy of velocity and displacement a lot.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/calibrated_velocity.png}
+        \caption{Velocity as dervied by integrating the calibrated accelerometer measurements.}
+        \label{fig:calibrated_velocity}
+      \end{figure}
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/calibrated_displacement.png}
+        \caption{Displacement as dervied by twice-integrating the calibrated accelerometer measurements.}
+        \label{fig:calibrated_displacement}
+      \end{figure}
+
+      We came up with two algorithm to fix the drifting issue. The method is to calculate the drift rates of  two sequential static intervals, and apply drift compensation on the first static interval and the following dynamic intervals. This method is a offline method since it has to go over time and determine the drift rate between two static intervals. The online method is to calculate the drift rate within a static interval and project this drifting behavior on both the static interval and the following dynamic interval. Both of the method had no obvious effect on fixing the drift in velocity.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/online_drift_compensation.png}
+        \caption{Compensate for drift by ...}
+        \label{fig:online_drift_compensation}
+      \end{figure}
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/offline_drift_compensation.png}
+        \caption{Compensate for drift by ...}
+        \label{fig:offline_drift_compensation}
+      \end{figure}
+
+      Although the fixing was trivial in NavX's accelerometer, we still used drift compensating in our IMU localization algorithm in case it may work greatly on other IMUs.
 
     \subsubsection{Zero Velocity Updates}
+
     % talk about how zero velocity udpates improve double integration/position
+
+    Looked at the drift compensated velocity, clearly there were still biases inside of the data. We decided to perform zero velocity update algorithm on the data. When the algorithm detected the robot being stationary, it calculated and recorded the bias in the static interval, removed the bias for the static interval and the following dynamic interval and then set the current velocity to be zero.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=1\linewidth]{./images/zeroed-velocity.png}
+        \caption{Compensate for drift by ...}
+        \label{fig:offline_drift_compensation}
+      \end{figure}
 
   \subsection{Comparing Our IMU Localization to the NavX API}
 
     % FIXME: how good is GetWorldX? Show mocap + nypro circles results
     % eventually also compare using with old/new mocap data
-% * <jhu4@wpi.edu> 2018-03-03T22:20:59.116Z:
-%
-% ^.
+
+    Applied pure double integration of raw IMU data on the circle test [REF] to get locations of the robot (figure x), we determined that it was not sufficient to meet our accuracy standard. Moreover, NavX location API (figure y) also didn't meet our standard.
+
+    In order to improve the accuracy of IMU localization, we explored and experimented different methods (IMU calibration, etc.) on data of the circle test [REF]. Since we didn't have a ground truth to measure the accuracy of our best method, we compared it with the NavX's get location API.
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.49\linewidth]{./images/navx-displacement.png}
+        \includegraphics[width=0.49\linewidth]{./images/zeroed-displacement.png}
+        \caption{Comparison between NavX (left) and our method (right) over the entire experiment.}
+        \label{fig:displacement_comparison}
+      \end{figure}
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.49\linewidth]{./images/navx-displacement-30s.png}
+        \includegraphics[width=0.49\linewidth]{./images/zero-displacement-30s.png}
+        \caption{Comparison between NavX (left) and our method (right) over the first 30 seconds of the experiment.}
+        \label{fig:displacement_comparison_30s}
+      \end{figure}
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.49\linewidth]{./images/navx-displacement-3s.png}
+        \includegraphics[width=0.49\linewidth]{./images/zero-displacement-3s.png}
+        \caption{Comparison between NavX (left) and our method (right) over the first 3 seconds of the experiment.}
+        \label{fig:displacement_comparison_3s}
+      \end{figure}
+
+
   \subsection{Measuring Beacon Delays}
 
     The beacon system relies on measuring the time it takes for a sound signal to travel from the beacons to the robot. To do this accurately, one must account for transmit and receive delays in addition to the actual time of flight. Figure \ref{fig:rx_tx_timing} illustrates the various delays we need to account for. We conducted experiments to estimate these delays. First, to get an estimate of the radio transmit and receive delay, a transmitter and receiver were set up on two microcontrollers. The transmitter sent \SI{5}{\milli\second} pulses at \SI{433}{\mega\hertz} (no encoded data) every \SI{55}{\milli\second}, and oscilloscope probes were attached to the input pin on the transmitter and the output pin on the receiver. By comparing the time difference between the input and output signals on the oscilloscope, we can determine the total time. Furthermore, we can measure the distance between the transmitter and receiver and subtract the theoretical time of flight from the total time. The full data for these measurements are available in \nameref{appendix:rf-rx-tx}, and an example measurement is shown in Figure \ref{fig:rf_delay_ex}. The time of flight of radio over distances of a new centimeters or meters is on the order of nanoseconds. We measured an average delay of \SI{45.175}{\micro\second}, which we attribute to the internal circuitry of the transmitter and receiver. The variance of this delay was \SI{16}{\micro\second}. However, we also measured delays as low as \SI{32}{\micro\second} and as high as \SI{79}{\micro\second}. Since the theoretical time of flight over the distances used in this experiment were at most \SI{1}{\nano\second}, we can conclude that there is both delay and significant variance in the delay of the transmitters and receivers. This is an important delay to consider when implementing the timing measurement of the beacon signals.
@@ -809,6 +913,22 @@
     \subsubsection{Accelerometer Processing}
 
       % describe our final methods for what we're actually doing with the navx data
+      Our method started with a separate prerequisite. It requested all of the accelerometer data to be calibrated and base-frame-rotated. The NavX was calibrated using the method in section xxx. The calibration corrected the misalignment, scaling and biases in accelerometer. After calibration, we mounted the NavX on the robot and collected few seconds of accelerometer data while the NavX is static. Using those data, we calculated the base frame rotation matrix. The matrix transferred the data from robot frame to the world frame.
+      After all the prerequisites were done, an static detector (mentioned in section xxx) was applied to all of the calibrated and base-frame-rotated data to classify the static and dynamic intervals (Figure D). In this static detector, we used $\zeta^6$ as the threshold and 80 samples as the sliding window.
+      (figure D)
+      Assumed the accelerometer drifted linearly and every dynamic interval had the same drifting behavior as its neighbor static interval. We paired every dynamic interval $DI_i$ with its previous static interval $SI_i$ as $I_i$, for $i\in N$ static intervals. We characterized the drift rate $d_i$ on $I_i$ using the function below. $S(I)$ is a function that takes an interval and returns the start time of the interval, where $E(I$) returns the end time of the interval. $Avg(t_o, t_f)$ is a function that takes a start time $t_o$ and an end time $t_f$ and returns the average accelerometer value during the range $(t_o,t_f)$.
+
+      $$d_i=\frac{Avg(t_f-t_{window},t_f) - Avg(t_o,t_o+t_{window})}{(t_f-t_o-t_{window})}$$
+      $$t_o=S(SI_i)$$
+      $$t_f=E(SI_i)$$
+
+      Then, we applied drift compensation on every data points in each interval. The value $v^j_i$ added on each data point can be calculated as $v^j_i=-d_ij\delta t$.
+
+      We next applied zero-velocity update on the data. Zero velocity update removed bias on every data sample by assuming that the bias of a data sample in an interval $I_i$ is the same as the bias of other data samples in that interval. Bias $b_i$ in interval $I_i$ can be characterized as
+
+      $$b_i=Avg(S(SI_i), E(SI_i))$$
+
+      We then applied clockwise rotation matrix $R(\theta)$ on every accelerometer data to transfer the direction of accelerometer data into the world frame. Finally, we double integrated the accelerometer data to get location of the robot.
 
     \subsubsection{Encoder IMU Fusion}
 
