@@ -381,11 +381,9 @@
 
   \subsection{Comparing Our IMU Localization to the NavX API}
 
-    % TODO: also compare using with new mocap data
+      % TODO: also compare using with new mocap data
 
-    We applied pure double integration of raw IMU data on the ``Nypro Circles'' test (described in Section \ref{section:drift_bias}) to get locations of the robot. We determined that it was not sufficient to meet our accuracy standard. Moreover, NavX location API (Figure \ref{fig:displacement_comparison}) also didn't meet our standard.
-
-    In order to improve the accuracy of IMU localization, we explored and experimented different methods (IMU calibration, etc.) on data of the circle test [REF]. Since we didn't have a ground truth to measure the accuracy of our best method, we compared it with the NavX's get location API.
+      We compare our method for localization with only the IMU against the \texttt{GetWorldX()} and \texttt{GetWorldY()} functions provided by the NavX. These functions differ from our methods because they do not include zero velocity updates or drift compensation. We also apply our own calibration parameters to our data, which differs from the internal calibration done by the NavX. As is shown in the Figure \ref{fig:displacement_comparison}, both methods drift significantly over the course of our experiment (``Nypro Circles'', described in Section \ref{section:drift_bias}). For reference, in this test our robot was driven in circles with a constant left-right wheel speed difference. However, when we zoom in to the first thirty seconds of the data, we see our method better preserves the sinusoidal nature of the motion, whereas the NavX position constructs lots of straight edges. Furthermore, zooming in to the first three seconds highlights that our method is significantly more accurate.
 
       \begin{figure}[H]
         \centering
