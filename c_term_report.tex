@@ -160,9 +160,9 @@
 
   \subsection{Filtering and Calibration} \label{filtering}
 
-  Given the number of sources of position information, it is natural that there will also be a number of ways to take advantage of using multiple techniques together. Different sensors can have better or worse performance in different scenarios, and a choice of fusion algorithm will yield more accurate position information by leveraging this. Calibration can also be used to compensate for errors between sensors. For instance, if your have encoders to determine that you are not moving, you can calibrate your IMU knowing this fact. The class of filtering algorithms we explore is called Bayesian filters. These filters describe the world and sensors with probability models, and they estimate both the state of the robot and the confidence of that state estimate. Bayesian filtering algorithms include Kalman filters, information filters, and particle filters. Kalman filters and information filters have the advantage in computational efficiency, where as particle filters can more be more accurate if the true belief distribution is non-gaussian or if the true dynamics are nonlinear \cite{thrun_probabilistic_2005}. In our work, it is natural to consider the state as the position, velocity, and acceleration of the robot. We claim that this state representation satisfies the Markov condition needed by Bayesian filters, which is that our current state is sufficient to make future predictions. To implement these filters, we required a model for now our state changes given our current state and motor inputs. For each measurement source, we define how the sensor values are derived from the state. It is easy to come up with very rough approximations for these equations, but difficult to construct accurate ones. On the other hand, these filters have very strong gaurantees and their efficacy has been demonstrated in numerous systems \cite{chui_kalman_1991}\cite{digiampaolo_mobile_2014}\cite{mirzaei_kalman_2008}\cite{nasa_kalman_1999}\cite{saab_standalone_2011}.
+    Given the number of sources of position information, it is natural that there will also be a number of ways to take advantage of using multiple techniques together. Different sensors can have better or worse performance in different scenarios, and a choice of fusion algorithm will yield more accurate position information by leveraging this. Calibration can also be used to compensate for errors between sensors. For instance, if your have encoders to determine that you are not moving, you can calibrate your IMU knowing this fact. The class of filtering algorithms we explore is called Bayesian filters. These filters describe the world and sensors with probability models, and they estimate both the state of the robot and the confidence of that state estimate. Bayesian filtering algorithms include Kalman filters, information filters, and particle filters. Kalman filters and information filters have the advantage in computational efficiency, where as particle filters can more be more accurate if the true belief distribution is non-gaussian or if the true dynamics are nonlinear \cite{thrun_probabilistic_2005}. In our work, it is natural to consider the state as the position, velocity, and acceleration of the robot. We claim that this state representation satisfies the Markov condition needed by Bayesian filters, which is that our current state is sufficient to make future predictions. To implement these filters, we required a model for now our state changes given our current state and motor inputs. For each measurement source, we define how the sensor values are derived from the state. It is easy to come up with very rough approximations for these equations, but difficult to construct accurate ones. On the other hand, these filters have very strong gaurantees and their efficacy has been demonstrated in numerous systems \cite{chui_kalman_1991}\cite{digiampaolo_mobile_2014}\cite{mirzaei_kalman_2008}\cite{nasa_kalman_1999}\cite{saab_standalone_2011}.
 
-  Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characteristics of the camera \cite{noauthor_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
+    Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characteristics of the camera \cite{itseez_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
 
 \section{Trade-Off Analysis} \label{methods}
 
@@ -277,7 +277,7 @@
   \subsection{Characterising Drift and Bias in the Accelerometer}
 
     In this section, we demonstrate that naive double integration becomes inaccurate within \SI{-999}{\second}, but that with calibration, base frame rotation, and zero velocity updates we can achieve accurate position information for \SI{-999}{\second}. % FIXME: fill in real numbers here
-    % Figure \ref{fig:raw_displacement} shows the double integration of accelerometer readings in X and Y with no calibration, bias, drift, or temperature compensation, or zero-velocity updates. Because double integration amplifies errors, this is not accurate for long enough to be useful.
+    % Figure \ref{fig:raw_displacement} shows the double integration of accelerometer readings in X and Y with no calibration, bias, drift, or temperature compensation, or zero velocity updates. Because double integration amplifies errors, this is not accurate for long enough to be useful.
 
     % TODO: figure out how how long the raw data double integration is accurate for
 
@@ -336,9 +336,9 @@
 
       Overall, our experiments showed that the accelerometer is subject to bias, and that these biases drift over periods of motion. Because of these errors, the double integration becomes inaccurate after a very short duration of motion. Furthermore, we show that the magnitude and direction of this drift has no straightforward relationship with the duration of motion or temperature. We now present several approaches for handling these sources of error and describe our results applying them to this data.
 
-    \subsubsection{Zero Velocity Updates}
+    \subsubsection{Zero Velocity Updates} \label{section:zero_velocity_updates}
 
-      Looking at the calibrated velocity plots (Figure \ref{fig:calibrated_velocity}), clearly there is still bias in the accelerometer readings which are causing the velocity to drift up and down during intervals of motion. We now apply zero-velocity updates to the data to mitigate this. Our zero-velocity updates work as such: when the static detector indicates the robot is stationary, calculate the bias in that static interval, remove that bias from the static interval and the following dynamic interval, and finally set the current velocity estimate to be zero. %TODO: add more details or math on how precisely this is done
+      Looking at the calibrated velocity plots (Figure \ref{fig:calibrated_velocity}), clearly there is still bias in the accelerometer readings which are causing the velocity to drift up and down during intervals of motion. We now apply zero velocity updates to the data to mitigate this. Our zero velocity updates work as such: when the static detector indicates the robot is stationary, calculate the bias in that static interval, remove that bias from the static interval and the following dynamic interval, and finally set the current velocity estimate to be zero. %TODO: add more details or math on how precisely this is done
 
       \begin{figure}[H]
         \centering
@@ -916,25 +916,55 @@
 
 			There are two software components of our system. First, there is a a C++ library cross-compile for the RoboRIO that FRC teams will use in their robot projects. Teams are expected to call two or three simple functions in their robot program, which gives us everything we need to log sensor data and send it to the TK1. Because of this minimal API, we require very few changes to robot programs in order to get localization. This will make it approachable for teams and encourage them to try localization. The second software component is a C++ program running on the TK1. This program reads the camera data, serves http camera streams, receives the sensor data from the RoboRIO, computes the position of the robot, and reports this position over network tables. Again, the TK1 was chosen for this task because of it's computing power.
 
-    \subsubsection{Accelerometer Processing}
+    \subsubsection{NavX Processing}
 
       % describe our final methods for what we're actually doing with the navx data
-      Our method started with a separate prerequisite. It requested all of the accelerometer data to be calibrated and base-frame-rotated. The NavX was calibrated using the method in section xxx. The calibration corrected the misalignment, scaling and biases in accelerometer. After calibration, we mounted the NavX on the robot and collected few seconds of accelerometer data while the NavX is static. Using those data, we calculated the base frame rotation matrix. The matrix transferred the data from robot frame to the world frame.
-      After all the prerequisites were done, an static detector (mentioned in section xxx) was applied to all of the calibrated and base-frame-rotated data to classify the static and dynamic intervals (Figure D). In this static detector, we used $\zeta^6$ as the threshold and 80 samples as the sliding window.
-      (figure D)
-      Assumed the accelerometer drifted linearly and every dynamic interval had the same drifting behavior as its neighbor static interval. We paired every dynamic interval $DI_i$ with its previous static interval $SI_i$ as $I_i$, for $i\in N$ static intervals. We characterized the drift rate $d_i$ on $I_i$ using the function below. $S(I)$ is a function that takes an interval and returns the start time of the interval, where $E(I$) returns the end time of the interval. $Avg(t_o, t_f)$ is a function that takes a start time $t_o$ and an end time $t_f$ and returns the average accelerometer value during the range $(t_o,t_f)$.
+      In this section we describe our final methods for incorporating the accelerometer readings and fused yaw readings from the NavX IMU. In short, the final process is to apply calibration parameters, rotate the accelerometer readings into the robot base frame, apply drift and bias compensation, the feed these readings into our extended kalman filter. Experimental results on each of these steps are presented above in Sections \ref{section:imu_calibration}, \ref{section:drift_bias}, and \ref{section:zero_velocity_updates}, but here we describe the final process in greater detail.
 
-      $$d_i=\frac{Avg(t_f-t_{window},t_f) - Avg(t_o,t_o+t_{window})}{(t_f-t_o-t_{window})}$$
-      $$t_o=S(SI_i)$$
-      $$t_f=E(SI_i)$$
+      The first step is to apply the calibration values, which is a straightforward application of Equation \ref{eq:accelerometer_calibration}. These parameters are determined a priori by the process described in Section \ref{section:imu_calibration}. $a^S$ is a 3 by 1 vector of the raw accelerometer readings, and $a^O$ is the same vector now calibrated. This calibration process accounts for axis misalignment, scaling, and bias errors.
 
-      Then, we applied drift compensation on every data points in each interval. The value $v^j_i$ added on each data point can be calculated as $v^j_i=-d_ij\delta t$.
+      \begin{equation} \label{eq:accelerometer_calibration}
+        a^O = T^aK^a(a^S+b^a) = \begin{bmatrix}
+          1 & -\alpha_{yz} & \alpha_{zy} \\
+          0 & 1 & -\alpha_{zx} \\
+          0 & 0 & 1 \\
+        \end{bmatrix}\begin{bmatrix}
+          s^a_x & 0 & 0 \\
+          0 & s^a_y & 0 \\
+          0 & 0 & s^a_z \\
+        \end{bmatrix}\Bigg(\begin{bmatrix}
+          a^S_x \\ a^S_y \\ a^S_z \\
+        \end{bmatrix}+\begin{bmatrix}
+          b^S_x \\ b^S_y \\ b^S_z \\
+        \end{bmatrix}\Bigg)
+      \end{equation}
 
-      We next applied zero-velocity update on the data. Zero velocity update removed bias on every data sample by assuming that the bias of a data sample in an interval $I_i$ is the same as the bias of other data samples in that interval. Bias $b_i$ in interval $I_i$ can be characterized as
+      After calibration, we account for the NavX not being mounted in the same orientation as the robot's base frame. We would like the positive accelerometer readings in X to point ``forward'' in the robot frame, and the positive readings in Z to point upwards. To achieve this, we assume the robot is stationary for the first \SI{5}{\second} of being turned on, and record the accelerometer readings during this period. We then use the Equation \ref{eq:base_frame_rotation} to find the rotation that rotates those measured accelerations into the expected acceleration in the robot base frame. This expected acceleration in the robot frame is $[0,0,1]$. We cannot infer the yaw of the robot from this process, so we assume the yaw offset between the NavX and the robot is given to use a priori.
 
-      $$b_i=Avg(S(SI_i), E(SI_i))$$
+      \begin{align}
+        R &= I + [v]_{\times} + {[v]_{\times}}^2\frac{1}{1+c}  \label{eq:base_frame_rotation}\\
+        [v]_{\times} &= \begin{bmatrix} 0 & -v_3 & v_2 \\ v_3 & 0 & -v_1 \\ -v_2 & v_1 & 0 \\ \end{bmatrix} \nonumber\\
+        v &= a\times b \nonumber\\
+        c &= a\cdot b \nonumber
+      \end{align}
 
-      We then applied clockwise rotation matrix $R(\theta)$ on every accelerometer data to transfer the direction of accelerometer data into the world frame. Finally, we double integrated the accelerometer data to get location of the robot.
+      After calibration and base frame rotation, a static detector was applied to all of the calibrated and base-frame-rotated data to classify the static and dynamic intervals. In this static detector, we used $\varsigma^6$ as the threshold and 80 samples as the sliding window, where $\varsigma$ is the magnitude of the variance of an example static period (Equation \ref{eq:threshold}). We chose $\varsigma^6$ experimentally by raising the power, which lowers the threshold, until the intervals were sufficiently static.
+
+      \begin{equation} \label{eq:threshold}
+        \varsigma = \sqrt{[\text{var}(a^t_x)]^2+[\text{var})(a^t_y)]^2+[\text{var})(a^t_z)]^2}
+      \end{equation}
+
+      %With this static detector, we can now compensate for the bias and drift in bias of the accelerometer. We model the accelerometer drifted as linear over time and assume that every dynamic interval had the same drifting behavior as its neighbor static interval. We paired every dynamic interval with its previous static interval. We characterized the drift rate $d_i$ on each static interval $I_i$ using the Equation \ref{eq:drift_comp}. $Avg(t_o, t_f)$ is a function that takes a start time $t_o$ and an end time $t_f$ and returns the average accelerometer value during the range $(t_o,t_f)$.
+
+      %\begin{equation} \label{eq:drift_comp}
+        %d_i = \frac{Avg(t_f-t_{window},t_f) - Avg(t_o,t_o+t_{window})}{(t_f-t_o-t_{window})}
+      %\end{equation}
+
+      %Then, we applied drift compensation on every data points in each interval. The value $v^j_i$ added on each data point can be calculated as $v^j_i=-d_ij\delta t$.
+
+      We next applied zero velocity update on the data. Zero velocity update removed bias on every data sample by assuming that the bias of a data sample is the same as the mean bias of the most recent static interval. Zero velocity updates also involve resetting the velocity estimate to 0, which could be implemented as a hard-reset or a probabilistic EKF measurement update with near zero variance to indicate high confidence.
+
+      Lastly, we applied clockwise rotation matrix $R(\theta)$ on every accelerometer data to transfer the direction of accelerometer data into the world frame, where $\theta$ is the yaw reported by the NavX function \texttt{GetYaw()}.
 
     \subsubsection{Encoder IMU Fusion}
 
