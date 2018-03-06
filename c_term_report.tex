@@ -150,7 +150,7 @@
     Lucas Kanade looks at pixels which have a large gradient in intensity of color. It changes images to be gray scaled in order to see changes in darkness instead of colors. Lucas Kanade method works the best when it uses pixels that have three qualities. The first is that the pixels in a small area have the same brightness. Even though the location of the pixel has changed the brightness is consistent, so using a pixel from that area to track is optimal. They also should be temporally similar meaning the path the pixel takes should change gradually. Pixels should also be spatially similar, meaning that neighboring pixels should have similar motion to each other. Picking pixels that fit these requirements work best with Lucas Kanade \cite{sun_optical_2008}.
 
     Optical flow has been used for multi-sensor localization in indoor, feature-rich environments \cite{gao_qingji_onboard_2015}. Using a PX4FLOW optical flow sensor, 64x64 pixel images were captured at 100 FPS, and an ultrasonic range sensor measured distance from the ground. The data from the camera was used to obtain a velocity information using optical flow and a position estimate using landmark detection on the images. These were fused with attitude data from an onboard IMU. In this research, miniature quad-copters flying over a textured carpet are used to evaluate the localization algorithm. The patterns on the 20x20m carpet, comprising dots of random size and a 1 square grid, are used as features for the optical flow and camera-based position estimates. The algorithm developed is benchmarked against results from an open-source optical flow position estimate provided with the sensor's API \cite{dominik_honegger_open_2013} and are compared qualitatively using the below plot.
-    
+
   \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{./images/gao_qingji_onboard_2015_results.png}
@@ -160,9 +160,9 @@
 
   \subsection{Filtering and Calibration} \label{filtering}
 
-  Given the number of sources of position information, it is natural that there will also be a number of ways to take advantage of using multiple techniques together. Different sensors can have better or worse performance in different scenarios, and a choice of fusion algorithm will yield more accurate position information by leveraging this. Calibration can also be used to compensate for errors between sensors. For instance, if your have encoders to determine that you are not moving, you can calibrate your IMU knowing this fact. The class of filtering algorithms we explore is called Bayesian filters. These filters describe the world and sensors with probability models, and they estimate both the state of the robot and the confidence of that state estimate. Bayesian filtering algorithms include Kalman filters, information filters, and particle filters. Kalman filters and information filters have the advantage in computational efficiency, where as particle filters can more be more accurate if the true belief distribution is non-gaussian or if the true dynamics are nonlinear \cite{thrun_probabilistic_2005}. In our work, it is natural to consider the state as the position, velocity, and acceleration of the robot. We claim that this state representation satisfies the Markov condition needed by Bayesian filters, which is that our current state is sufficient to make future predictions. To implement these filters, we required a model for now our state changes given our current state and motor inputs. For each measurement source, we define how the sensor values are derived from the state. It is easy to come up with very rough approximations for these equations, but difficult to construct accurate ones. On the other hand, these filters have very strong gaurantees and their efficacy has been demonstrated in numerous systems \cite{chui_kalman_1991}\cite{digiampaolo_mobile_2014}\cite{mirzaei_kalman_2008}\cite{nasa_kalman_1999}\cite{saab_standalone_2011}.
+    Given the number of sources of position information, it is natural that there will also be a number of ways to take advantage of using multiple techniques together. Different sensors can have better or worse performance in different scenarios, and a choice of fusion algorithm will yield more accurate position information by leveraging this. Calibration can also be used to compensate for errors between sensors. For instance, if your have encoders to determine that you are not moving, you can calibrate your IMU knowing this fact. The class of filtering algorithms we explore is called Bayesian filters. These filters describe the world and sensors with probability models, and they estimate both the state of the robot and the confidence of that state estimate. Bayesian filtering algorithms include Kalman filters, information filters, and particle filters. Kalman filters and information filters have the advantage in computational efficiency, where as particle filters can more be more accurate if the true belief distribution is non-gaussian or if the true dynamics are nonlinear \cite{thrun_probabilistic_2005}. In our work, it is natural to consider the state as the position, velocity, and acceleration of the robot. We claim that this state representation satisfies the Markov condition needed by Bayesian filters, which is that our current state is sufficient to make future predictions. To implement these filters, we required a model for now our state changes given our current state and motor inputs. For each measurement source, we define how the sensor values are derived from the state. It is easy to come up with very rough approximations for these equations, but difficult to construct accurate ones. On the other hand, these filters have very strong gaurantees and their efficacy has been demonstrated in numerous systems \cite{chui_kalman_1991}\cite{digiampaolo_mobile_2014}\cite{mirzaei_kalman_2008}\cite{nasa_kalman_1999}\cite{saab_standalone_2011}.
 
-  Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characteristics of the camera \cite{noauthor_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
+    Many of the localization techniques discussed involve some form of calibration. Primarily, the IMU requires calibration for misaligned axis, scaling factors, and biases. There are many procedures for calcuating these calibration parameters by taking advantage of static intervals and assumptions about the force of gravity \cite{lupton_visual-inertial-aided_2012}\cite{lee_test_2011}\cite{tedaldi_robust_2014}. Visual tag detection algorithms, such as ArUco, also include a camera calibration process to account for the focal length, field of view, and distortion characteristics of the camera \cite{itseez_opencv:_2017}. Knowing these parameters allows one to undo distortion to the image, which is essential for detection of most AR tags.
 
 \section{Trade-Off Analysis} \label{methods}
 
@@ -257,7 +257,7 @@
       \label{fig:gyro_integration}
     \end{figure}
 
-  \subsection{Accuracy of Gyro Integration versus On-Chip Yaw Calculation}
+  \subsection{Accuracy of Gyro Integration versus On-Chip Yaw Calculation} \label{section:yaw_accuracy}
 
     We asked the question of whether the provided on-chip \texttt{GetYaw()} method is more or less accurate than what can be computed from the raw gyroscope readings. To answer this question, we first used implemented a simple procedure for computing yaw from the gyroscope readings. First, we apply the calibration parameters (see section \ref{section:imu_calibration}), then a base-frame rotation. This base frame rotation accounts for the mounting of the NavX on our robot, which may not be perfectly flat. To do this, we let the robot sit still for a second or two and compute the rotation matrix that rotates the accelerometers readings to be $[0,0,1]$, which is the value you'd expect if the NavX were flat. Having calibrated and rotated the raw gyroscope readings in all axis, we can consider only the yaw or $z$ axis of the gyroscope. We use a 1-step forward Euler's method to integrate these readings, which are in degrees/second. This gives us our yaw angle over time.
 
@@ -276,14 +276,21 @@
 
   \subsection{Characterising Drift and Bias in the Accelerometer}
 
-    In this section, we demonstrate that naive double integration is inaccurate, but that with calibration, base frame rotation, and zero velocity updates we can acheive accurate position information from the NavX IMU.
+    In this section, we demonstrate that naive double integration becomes inaccurate within \SI{-999}{\second}, but that with calibration, base frame rotation, and zero velocity updates we can achieve accurate position information for \SI{-999}{\second}. % FIXME: fill in real numbers here
+    % Figure \ref{fig:raw_displacement} shows the double integration of accelerometer readings in X and Y with no calibration, bias, drift, or temperature compensation, or zero velocity updates. Because double integration amplifies errors, this is not accurate for long enough to be useful.
 
-    \subsubsection{Measuring the drift and bias in the accelerometer}
+    % TODO: figure out how how long the raw data double integration is accurate for
 
-      % report the drifts and biases we saw in the circles test and in the
-      % talk about how there weren't any obvious trends in bias
-      % discuss the static tests you did where the rio was stationary, and report how much you say it drifting
-      % we can do the same for the nypro stuff, showing how drift effects velociton and position as you integrate/double integrate
+    %\begin{figure}[H]
+      %\centering
+      %\includegraphics[width=1\linewidth]{./images/raw-displacement.png}
+      %\caption{The result of double integrating the raw accelerometer measurements in X and Y.}
+      %\label{fig:raw_displacement}
+    %\end{figure}
+
+    \subsubsection{Measuring the drift and bias in the accelerometer} \label{section:drift_bias}
+      % we can do the same for the nypro stuff, showing how drift effects velocity and position as you integrate/double integrate
+
       Compensating for the accelerometer drift is important in IMU localization since double integration of accelerometer data amplifies any inaccuracies. We first performed an experiment to study the drift of accelerometer when it is stationary. We put the accelerometer on a flat surface for 6 minutes and collected the data at \SI{100}{\hertz} (see Figure \ref{fig:static_test}). Then, we calculated the average accelerometer value of the first 500 samples and the last 500 samples in the x and y axes. The difference of mean values of first 500 samples and last 500 sample in x, y, z axes are -0.000475g, 0.000158g, 0.000323g respectively. For reference, we note that the maximum drift of -0.00475g, or \SI{-0.00465}{\meter\per\second\squared} would cause a position error of $0.5*-0.00465*3^2=$\SI{-0.020948}{\meter} over a 3 second period. In other words, if the NavX is stationary, even if the initial bias of the accelerometer is zero, the position could drift up to \SI{2}{\centi\meter} over 3 seconds.
 
       \begin{figure}[H]
@@ -293,7 +300,7 @@
         \label{fig:static_test}
       \end{figure}
 
-      We then wondered that whether the duration of motion influences the amount of drift, so we performed an another experiment. We drove the robot in a circle, stop for 9 seconds,  drove the robot in 2 circles, stop for 9 second, so on, until the robot drove for 5 circles. We then collected accelerometer data, yaw angle, and temperature. We studied the drifting behavior and biases by observing the mean accelerometer value in several static intervals. Those values are shown in Figure \ref{fig:static_means}.
+      We then wondered that whether the duration of motion influences the amount of drift, so we performed another experiment. We drove the robot in a circle, stopped for 9 seconds, drove the robot in 2 circles, stopped for 9 second, so on until the robot drove for 5 circles in a row. We will refer to this test as the ``Nypro Circles'' test. This allows us to see whether moving for longer periods of times will cause more drift. We collected the accelerometer data, fused yaw measurement, and temperature. Using this data, we plot the mean accelerometer value in each of the static intervals to see if there is a clear trend (see Figure \ref{fig:static_means}). Based on these means, we can say that the NavX accelerometer drifted a lot between static intervals. However, there is no simple linear trend between the duration of motion.
 
       \begin{figure}[H]
         \centering
@@ -302,79 +309,81 @@
         \label{fig:static_means}
       \end{figure}
 
-      The NavX accelerometer drifted a lot among several static intervals. It seemed like motions affect drift a lot. However, the drifted setting values didn't seem to have a trend over motioness.
-
-      Since temperature could also be a factor to affect accelerometer values, we compared the temperature with accelerometer values in static intervals over time.
-
-      \begin{figure}[H]
-        \centering
-        \includegraphics[width=1\linewidth]{./images/temperature.png}
-        \caption{A Plot of temperature recorded by the NavX over the duration of our test}
-        \label{fig:temperature}
-      \end{figure}
-
-      Shown in Figure \ref{fig:temperature}, we have seen that the temperature overall decreased over time. However, the biases in static intervals over time didn't show a specific trend. Temperature seemed to not have a straightforward relationship with accelerometer drift.
-
-      Overall, we figured out that the accelerometer drifted way much in motion than being stationary.Moreover, it drifted randomly and did not have a trend. Also, temperature seemed not having an obvious association with drift trend.
-
-    \subsubsection{Drift Compensation}
-
-    % then, explain what we tried to do to compensate for drift, and why it didn't really fix it
-    We integrated the calibrated accelerometer data with yaw angles of the circle test (refer back to section 5.3.1) to visualize velocity and displacement of our robot. We can easily see in figure xxx and yyy that drift affect the accuracy of velocity and displacement a lot.
+      Having measured the accelerometer bias and studied its drift, we then integrated the accelerometer data with yaw angles of the ``Nypro Circles'' test to see how these effect the position. To get the best results possible, we also apply our calibration parameters (see \ref{section:imu_calibration}). When integrating to get position, we rotate the robot into the world frame using the yaw angles come from the \texttt{GetYaw()} function of the NavX API, which is very accurate (see \ref{section:yaw_accuracy}. Figure \ref{fig:calibrated_velocity} and \ref{fig:calibrated_displacement} show that bias and drift make velocity and displacement inaccurate after only a short period of motion.
 
       \begin{figure}[H]
         \centering
         \includegraphics[width=1\linewidth]{./images/calibrated_velocity.png}
-        \caption{Velocity as dervied by integrating the calibrated accelerometer measurements.}
+        \caption{Velocity as derived by integrating the calibrated accelerometer measurements.}
         \label{fig:calibrated_velocity}
       \end{figure}
 
       \begin{figure}[H]
         \centering
-        \includegraphics[width=1\linewidth]{./images/calibrated_displacement.png}
-        \caption{Displacement as dervied by twice-integrating the calibrated accelerometer measurements.}
+        \includegraphics[width=0.6\linewidth]{./images/calibrated_displacement.png}
+        \caption{Displacement as derived by twice-integrating the calibrated accelerometer measurements.}
         \label{fig:calibrated_displacement}
       \end{figure}
 
-      We came up with two algorithm to fix the drifting issue. The method is to calculate the drift rates of  two sequential static intervals, and apply drift compensation on the first static interval and the following dynamic intervals. This method is a offline method since it has to go over time and determine the drift rate between two static intervals. The online method is to calculate the drift rate within a static interval and project this drifting behavior on both the static interval and the following dynamic interval. Both of the method had no obvious effect on fixing the drift in velocity.
+      Since temperature could also be a factor that affects accelerometer values, we compared the temperature with accelerometer values in static intervals over time. Shown in Figure \ref{fig:temperature}, the temperature increased when the robot was static and decreased when the robot was in motion. However, temperature does not have a straightforward relationship with accelerometer bias or drift in bias.
 
       \begin{figure}[H]
         \centering
-        \includegraphics[width=1\linewidth]{./images/online_drift_compensation.png}
-        \caption{Compensate for drift by ...}
-        \label{fig:online_drift_compensation}
+        \includegraphics[width=1\linewidth]{./images/temperature.png}
+        \caption{A Plot of temperature recorded by the NavX over the duration of our test.}
+        \label{fig:temperature}
       \end{figure}
+
+      Overall, our experiments showed that the accelerometer is subject to bias, and that these biases drift over periods of motion. Because of these errors, the double integration becomes inaccurate after a very short duration of motion. Furthermore, we show that the magnitude and direction of this drift has no straightforward relationship with the duration of motion or temperature. We now present several approaches for handling these sources of error and describe our results applying them to this data.
+
+    \subsubsection{Zero Velocity Updates} \label{section:zero_velocity_updates}
+
+      Looking at the calibrated velocity plots (Figure \ref{fig:calibrated_velocity}), clearly there is still bias in the accelerometer readings which are causing the velocity to drift up and down during intervals of motion. We now apply zero velocity updates to the data to mitigate this. Our zero velocity updates work as such: when the static detector indicates the robot is stationary, calculate the bias in that static interval, remove that bias from the static interval and the following dynamic interval, and finally set the current velocity estimate to be zero. %TODO: add more details or math on how precisely this is done
 
       \begin{figure}[H]
         \centering
-        \includegraphics[width=1\linewidth]{./images/offline_drift_compensation.png}
-        \caption{Compensate for drift by ...}
-        \label{fig:offline_drift_compensation}
+        \includegraphics[width=1\linewidth]{./images/bias-compt-velocity.png}
+        \caption{Velocity after bias during static intervals is removed.}
+        \label{fig:bias-removed}
       \end{figure}
-
-      Although the fixing was trivial in NavX's accelerometer, we still used drift compensating in our IMU localization algorithm in case it may work greatly on other IMUs.
-
-    \subsubsection{Zero Velocity Updates}
-
-    % talk about how zero velocity udpates improve double integration/position
-
-    Looked at the drift compensated velocity, clearly there were still biases inside of the data. We decided to perform zero velocity update algorithm on the data. When the algorithm detected the robot being stationary, it calculated and recorded the bias in the static interval, removed the bias for the static interval and the following dynamic interval and then set the current velocity to be zero.
 
       \begin{figure}[H]
         \centering
         \includegraphics[width=1\linewidth]{./images/zeroed-velocity.png}
-        \caption{Compensate for drift by ...}
+        \caption{Velocity after both applying bias and zeroing velocity estimates.}
+        \label{fig:zeroed_velocity}
+      \end{figure}
+
+    \subsubsection{Drift Compensation}
+
+      Having compensated for the biases found during static intervals, we now wonder whether we can account for the drift between these static interval biases. As was shown in Section \ref{section:drift_bias}, there is no clear trend in how the motions change between or within static intervals. This means we cannot hope to find any one drift rate and apply it to the entire stream of accelerometer data. However, there are two other possible ways to account for drift looking only at a single static interval or a single pair of static intervals. The first method is to calculate the drift rates \textit{between} two sequential static intervals, and apply drift compensation starting from the static interval and up until the next static interval. This method is an offline method since it requires knowing the future accelerometer data to account for the drift in the current data. Because this method requires future data, it is not possible to implement in our system in real time. The second method is to calculate the drift rate \textit{within} a static interval and project this drifting behavior on both the static interval and the following dynamic interval. This method is online because it only requires current and past accelerometer readings. Both of these methods offer no significant improvement, but we report them for completeness. These two methods are plotted below, with the original data (only calibration applied, no drift compensation) show for comparison (Figures \ref{fig:calibrated_velocity_ref}, \ref{fig:offline_drift_compensation}, \ref{fig:online_drift_compensation}).
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.85\linewidth]{./images/calibrated_velocity.png}
+        \caption{Velocity as derived by integrating the calibrated accelerometer measurements.}
+        \label{fig:calibrated_velocity_ref}
+      \end{figure}
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.85\linewidth]{./images/offline_drift_compensation.png}
+        \caption{Velocity where drift is calculated between static intervals}
         \label{fig:offline_drift_compensation}
+      \end{figure}
+
+      \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.85\linewidth]{./images/online_drift_compensation.png}
+        \caption{Velocity where drift is calculated within static intervals}
+        \label{fig:online_drift_compensation}
       \end{figure}
 
   \subsection{Comparing Our IMU Localization to the NavX API}
 
-    % FIXME: how good is GetWorldX? Show mocap + nypro circles results
-    % eventually also compare using with old/new mocap data
+      % TODO: also compare using with new mocap data
 
-    Applied pure double integration of raw IMU data on the circle test [REF] to get locations of the robot (figure x), we determined that it was not sufficient to meet our accuracy standard. Moreover, NavX location API (figure y) also didn't meet our standard.
-
-    In order to improve the accuracy of IMU localization, we explored and experimented different methods (IMU calibration, etc.) on data of the circle test [REF]. Since we didn't have a ground truth to measure the accuracy of our best method, we compared it with the NavX's get location API.
+      We compare our method for localization with only the IMU against the \texttt{GetWorldX()} and \texttt{GetWorldY()} functions provided by the NavX. These functions differ from our methods because they do not include zero velocity updates or drift compensation. We also apply our own calibration parameters to our data, which differs from the internal calibration done by the NavX. As is shown in the Figure \ref{fig:displacement_comparison}, both methods drift significantly over the course of our experiment (``Nypro Circles'', described in Section \ref{section:drift_bias}). For reference, in this test our robot was driven in circles with a constant left-right wheel speed difference. However, when we zoom in to the first thirty seconds of the data, we see our method better preserves the sinusoidal nature of the motion, whereas the NavX position constructs lots of straight edges. Furthermore, zooming in to the first three seconds highlights that our method is significantly more accurate.
 
       \begin{figure}[H]
         \centering
@@ -399,7 +408,6 @@
         \caption{Comparison between NavX (left) and our method (right) over the first 3 seconds of the experiment.}
         \label{fig:displacement_comparison_3s}
       \end{figure}
-
 
   \subsection{Measuring Beacon Delays}
 
@@ -734,16 +742,47 @@
     % compare individual points in frames
     % compare covariance after Kalman filtering
 
-	\subsection{Benchmarking MarkerMapper with VICON Motion Capture}
+	\subsection{Benchmarking Aruco and MarkerMapper with VICON Motion Capture}
 
-	\subsection{On Building MarkerMaps}
-    
-     
+		Using the Vicon motion capture system, data from the PlayStation Eye Camera and Logitech C920 were recorded at 480p x 60 FPS and 1080p x 30 FPS, respectively. During this test, only two cameras were used to achieve in practice the desired frames per second with both cameras (median values of 27.76 and 60, respectively). A Kobuki Turtlebot 2 base was used as a mobile platform, driven in a square and randomly around the area to simulate teleoperation during gameplay. ARUCO16h3 Tags marked with Vicon trackers were placed in a circle 3 meters in diameter around the robot. A custom dictionary was defined containing only the tags printed to avoid misdetecting tags that do not actually exist. The position of the robot was tracked during the two trials. 
+
+		To benchmark the accuracy of ARUCO tag detection, the pose of each tag was determined offline. Using matplotlib, the distance from Tag 2 was plotted over time and compared against the distance between the two tracked objects reported by the Vicon system.
+
+ 		\begin{figure}[H]
+      \centering
+      \includegraphics[width=0.98\linewidth]{./images/tag_2_disp_aruco_mocap_tb.png}
+      \caption{Distance from a tag placed adjacent to the origin.}
+      \label{fig:dist_to_tag_two}
+    \end{figure}
+
+    Future results include statistical analysis on the rate of detection for all tags and on the accuracy of the pose estimate. Sources of error include offsets between the position of the camera and the position of the Vicon trackers on the robot and offsets between the trackers on the paper and the centers of ARUCO tags. These are approximately 10cm and 4cm respectively. In future tests, these results will also be compared against data from the IMU and Kobuku encoders.  
+
+    To benchmark Marker Mapper, a Marker Map was generated using the Logitech C920 camera at 1080p. Several Marker Maps were built with different pose estimates. The one most closely approximating the configuration of the Map was selected for offline anaysis. 
+
+		\begin{figure}[H]
+      \centering
+      \includegraphics[width=0.98\linewidth]{./images/marker_map_turtlebot_2.png}
+      \caption{The blue rectagles represent markers, the red the origin, the green pose estimates of the camera during mapping.}
+      \label{fig:marker_mapper_mocap_trial}
+    \end{figure}
+
+    Using this map as input, the pose estimate with respect to Tag 0 (the origin) was determined. The plot below describes the position estimate from Marker Mapper and from the Vicon System during the simulated autonomous trial. Further analysis is needed, but the below plot suggests that the global position estimate must be filtered using other sensors. When plotted over time, a reasonable position estimate can be inferred over a short peroid of time. However, Marker Mapper fails to track the robot after making a corner.
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=0.98\linewidth]{./images/vicon_mocap_square_tb.png}
+      \caption{Pose estimate from Marker Mapper in a light hue, Vicon in a darker hue. The vicon data are a tight square and the Marker Mapper data are more widely distributed. This data suggests that the position estimate is accurate over a short peroid of time, but is not suitable unless filtered.}
+      \label{fig:marker_mapper_output_mocap_tb}
+    \end{figure}
+
+    Further analysis is necessary for a quantitative estimate of accuracy from Marker Mapper and Aruco. The data above suggest that the pose estimate has reasonably low error over a short peroid of time, but global position is inaccurate from Marker Mapper. Further investigation is necessary to determine if this is because of the position estimate from Aruco or errors from generating the marker map.
+
+	% \subsection{On Building MarkerMaps}
 
 	\subsection{Erroneous detections with ArUco}
-    
-    Marker Maps must comprise fiducial markers from known "dictionaries" or binary encodings. Examples of a several dictionaries are shown below. Dictionary selection is important because it allows users to optimize their Marker Maps. Users can choose dictionaries with different numbers of tags, marker (square) sizes, and inter-marker distances. Inter-marker distances are determined by the number of tags in the dictionary (high distances correspond to low numbers of tags). High inter-marker distances make detection more robust. Tags are defined by a list of bytes which determine the color of squares. Dictionaries can be further optimized by setting the "maxCorrectionBits" parameter experimentally to reduce false positives\cite{open_source_computer_vision_detection_2015}. 
-    
+
+    Marker Maps must comprise fiducial markers from known "dictionaries" or binary encodings. Examples of a several dictionaries are shown below. Dictionary selection is important because it allows users to optimize their Marker Maps. Users can choose dictionaries with different numbers of tags, marker (square) sizes, and inter-marker distances. Inter-marker distances are determined by the number of tags in the dictionary (high distances correspond to low numbers of tags). High inter-marker distances make detection more robust. Tags are defined by a list of bytes which determine the color of squares. Dictionaries can be further optimized by setting the "maxCorrectionBits" parameter experimentally to reduce false positives\cite{open_source_computer_vision_detection_2015}.
+
     Throughout our experiments with ArUco tags, we accumulated several examples of detections that were erroneous in some form or another. First, we present examples of tags whose ID is misdetected (Figure \ref{fig:misdetected_tags}). In all these cases the incorrectly detected ID was 2, but there is no evidence that this is an issue just with tag 2 specifically.
 
     \begin{figure}[H]
@@ -754,6 +793,13 @@
       \includegraphics[width=0.49\linewidth]{./images/misidentified_tag_4.png}
       \caption{Tags that were detected, but with the wrong IDs}
       \label{fig:misdetected_tags}
+    \end{figure}
+
+    \begin{figure}[H]
+      \centering
+      \includegraphics[width=.98\linewidth]{./images/marker_mapper_hallway_misid.png}
+      \caption{Tags 7 and 21 were misidentified while generating this Marker Map.}
+      \label{fig:misid_marker_mapper}
     \end{figure}
 
     We also report how a poor camera calibration file and cause inaccuracies in the estimated poses of tags. In Figure \ref{fig:bad_tag_pose}, the tag's ID is identified correctly, but it's orientation is incorrect.
@@ -910,25 +956,55 @@
 
 			There are two software components of our system. First, there is a a C++ library cross-compile for the RoboRIO that FRC teams will use in their robot projects. Teams are expected to call two or three simple functions in their robot program, which gives us everything we need to log sensor data and send it to the TK1. Because of this minimal API, we require very few changes to robot programs in order to get localization. This will make it approachable for teams and encourage them to try localization. The second software component is a C++ program running on the TK1. This program reads the camera data, serves http camera streams, receives the sensor data from the RoboRIO, computes the position of the robot, and reports this position over network tables. Again, the TK1 was chosen for this task because of it's computing power.
 
-    \subsubsection{Accelerometer Processing}
+    \subsubsection{NavX Processing}
 
       % describe our final methods for what we're actually doing with the navx data
-      Our method started with a separate prerequisite. It requested all of the accelerometer data to be calibrated and base-frame-rotated. The NavX was calibrated using the method in section xxx. The calibration corrected the misalignment, scaling and biases in accelerometer. After calibration, we mounted the NavX on the robot and collected few seconds of accelerometer data while the NavX is static. Using those data, we calculated the base frame rotation matrix. The matrix transferred the data from robot frame to the world frame.
-      After all the prerequisites were done, an static detector (mentioned in section xxx) was applied to all of the calibrated and base-frame-rotated data to classify the static and dynamic intervals (Figure D). In this static detector, we used $\zeta^6$ as the threshold and 80 samples as the sliding window.
-      (figure D)
-      Assumed the accelerometer drifted linearly and every dynamic interval had the same drifting behavior as its neighbor static interval. We paired every dynamic interval $DI_i$ with its previous static interval $SI_i$ as $I_i$, for $i\in N$ static intervals. We characterized the drift rate $d_i$ on $I_i$ using the function below. $S(I)$ is a function that takes an interval and returns the start time of the interval, where $E(I$) returns the end time of the interval. $Avg(t_o, t_f)$ is a function that takes a start time $t_o$ and an end time $t_f$ and returns the average accelerometer value during the range $(t_o,t_f)$.
+      In this section we describe our final methods for incorporating the accelerometer readings and fused yaw readings from the NavX IMU. In short, the final process is to apply calibration parameters, rotate the accelerometer readings into the robot base frame, apply drift and bias compensation, the feed these readings into our extended kalman filter. Experimental results on each of these steps are presented above in Sections \ref{section:imu_calibration}, \ref{section:drift_bias}, and \ref{section:zero_velocity_updates}, but here we describe the final process in greater detail.
 
-      $$d_i=\frac{Avg(t_f-t_{window},t_f) - Avg(t_o,t_o+t_{window})}{(t_f-t_o-t_{window})}$$
-      $$t_o=S(SI_i)$$
-      $$t_f=E(SI_i)$$
+      The first step is to apply the calibration values, which is a straightforward application of Equation \ref{eq:accelerometer_calibration}. These parameters are determined a priori by the process described in Section \ref{section:imu_calibration}. $a^S$ is a 3 by 1 vector of the raw accelerometer readings, and $a^O$ is the same vector now calibrated. This calibration process accounts for axis misalignment, scaling, and bias errors.
 
-      Then, we applied drift compensation on every data points in each interval. The value $v^j_i$ added on each data point can be calculated as $v^j_i=-d_ij\delta t$.
+      \begin{equation} \label{eq:accelerometer_calibration}
+        a^O = T^aK^a(a^S+b^a) = \begin{bmatrix}
+          1 & -\alpha_{yz} & \alpha_{zy} \\
+          0 & 1 & -\alpha_{zx} \\
+          0 & 0 & 1 \\
+        \end{bmatrix}\begin{bmatrix}
+          s^a_x & 0 & 0 \\
+          0 & s^a_y & 0 \\
+          0 & 0 & s^a_z \\
+        \end{bmatrix}\Bigg(\begin{bmatrix}
+          a^S_x \\ a^S_y \\ a^S_z \\
+        \end{bmatrix}+\begin{bmatrix}
+          b^S_x \\ b^S_y \\ b^S_z \\
+        \end{bmatrix}\Bigg)
+      \end{equation}
 
-      We next applied zero-velocity update on the data. Zero velocity update removed bias on every data sample by assuming that the bias of a data sample in an interval $I_i$ is the same as the bias of other data samples in that interval. Bias $b_i$ in interval $I_i$ can be characterized as
+      After calibration, we account for the NavX not being mounted in the same orientation as the robot's base frame. We would like the positive accelerometer readings in X to point ``forward'' in the robot frame, and the positive readings in Z to point upwards. To achieve this, we assume the robot is stationary for the first \SI{5}{\second} of being turned on, and record the accelerometer readings during this period. We then use the Equation \ref{eq:base_frame_rotation} to find the rotation that rotates those measured accelerations into the expected acceleration in the robot base frame. This expected acceleration in the robot frame is $[0,0,1]$. We cannot infer the yaw of the robot from this process, so we assume the yaw offset between the NavX and the robot is given to use a priori.
 
-      $$b_i=Avg(S(SI_i), E(SI_i))$$
+      \begin{align}
+        R &= I + [v]_{\times} + {[v]_{\times}}^2\frac{1}{1+c}  \label{eq:base_frame_rotation}\\
+        [v]_{\times} &= \begin{bmatrix} 0 & -v_3 & v_2 \\ v_3 & 0 & -v_1 \\ -v_2 & v_1 & 0 \\ \end{bmatrix} \nonumber\\
+        v &= a\times b \nonumber\\
+        c &= a\cdot b \nonumber
+      \end{align}
 
-      We then applied clockwise rotation matrix $R(\theta)$ on every accelerometer data to transfer the direction of accelerometer data into the world frame. Finally, we double integrated the accelerometer data to get location of the robot.
+      After calibration and base frame rotation, a static detector was applied to all of the calibrated and base-frame-rotated data to classify the static and dynamic intervals. In this static detector, we used $\varsigma^6$ as the threshold and 80 samples as the sliding window, where $\varsigma$ is the magnitude of the variance of an example static period (Equation \ref{eq:threshold}). We chose $\varsigma^6$ experimentally by raising the power, which lowers the threshold, until the intervals were sufficiently static.
+
+      \begin{equation} \label{eq:threshold}
+        \varsigma = \sqrt{[\text{var}(a^t_x)]^2+[\text{var})(a^t_y)]^2+[\text{var})(a^t_z)]^2}
+      \end{equation}
+
+      %With this static detector, we can now compensate for the bias and drift in bias of the accelerometer. We model the accelerometer drifted as linear over time and assume that every dynamic interval had the same drifting behavior as its neighbor static interval. We paired every dynamic interval with its previous static interval. We characterized the drift rate $d_i$ on each static interval $I_i$ using the Equation \ref{eq:drift_comp}. $Avg(t_o, t_f)$ is a function that takes a start time $t_o$ and an end time $t_f$ and returns the average accelerometer value during the range $(t_o,t_f)$.
+
+      %\begin{equation} \label{eq:drift_comp}
+        %d_i = \frac{Avg(t_f-t_{window},t_f) - Avg(t_o,t_o+t_{window})}{(t_f-t_o-t_{window})}
+      %\end{equation}
+
+      %Then, we applied drift compensation on every data points in each interval. The value $v^j_i$ added on each data point can be calculated as $v^j_i=-d_ij\delta t$.
+
+      We next applied zero velocity update on the data. Zero velocity update removed bias on every data sample by assuming that the bias of a data sample is the same as the mean bias of the most recent static interval. Zero velocity updates also involve resetting the velocity estimate to 0, which could be implemented as a hard-reset or a probabilistic EKF measurement update with near zero variance to indicate high confidence.
+
+      Lastly, we applied clockwise rotation matrix $R(\theta)$ on every accelerometer data to transfer the direction of accelerometer data into the world frame, where $\theta$ is the yaw reported by the NavX function \texttt{GetYaw()}.
 
     \subsubsection{Encoder IMU Fusion}
 
